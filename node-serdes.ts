@@ -5,7 +5,6 @@ import { ValueSerializer, ValueSerializerDelegate, ValueDeserializer, ValueDeser
 // with the goal of making node's v8 module (v8.js) work without modification.
 // - https://github.com/nodejs/node/blob/main/src/node_serdes.cc
 // - https://github.com/nodejs/node/blob/main/deps/v8/src/d8/d8.cc
-// - https://github.com/nodejs/node/blob/main/src/node_messaging.cc#L299
 
 interface ISerializer {
   _getDataCloneError: typeof Error;
@@ -44,15 +43,15 @@ type SerializationData = {
 export abstract class Serializer implements ISerializer, ValueSerializerDelegate {
   private serializer: ValueSerializer;
   private data: SerializationData | null;
-  private arrayBuffers: ArrayBuffer[];
-  private sharedArrayBuffers: SharedArrayBuffer[];
+  // private arrayBuffers: ArrayBuffer[];
+  // private sharedArrayBuffers: SharedArrayBuffer[];
   // private currentMemoryUsage: number;
 
-  constructor(options?: ConstructorParameters<typeof ValueSerializer>[1]) {
-    this.serializer = new ValueSerializer(this, options);
+  constructor() {
+    this.serializer = new ValueSerializer(this);
     this.data = null;
-    this.arrayBuffers = [];
-    this.sharedArrayBuffers = [];
+    // this.arrayBuffers = [];
+    // this.sharedArrayBuffers = [];
     // this.currentMemoryUsage = 0;
   }
 
@@ -145,10 +144,10 @@ export abstract class Serializer implements ISerializer, ValueSerializerDelegate
     this.serializer.writeRawBytes(bytes);
   }
 
-  appendBackingStoresTo(to: ArrayBuffer[]): void {
-    to.push(...this.arrayBuffers);
-    this.arrayBuffers = [];
-  }
+  // appendBackingStoresTo(to: ArrayBuffer[]): void {
+  //   to.push(...this.arrayBuffers);
+  //   this.arrayBuffers = [];
+  // }
 
   throwDataCloneError(message: string): never {
     throw new (this._getDataCloneError || Error)(message);
@@ -176,12 +175,12 @@ export abstract class Serializer implements ISerializer, ValueSerializerDelegate
     return true
   }
 
+  get hasCustomHostObjects() { return false };
+
   isHostObject(_object: unknown): boolean {
     // Shouldn't be necessary due to `treatArrayBufferViewsAsHostObjects`
     return false
   };
-
-  get hasCustomHostObjects() { return false };
 }
 
 export abstract class Deserializer implements IDeserializer, ValueDeserializerDelegate {

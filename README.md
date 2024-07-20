@@ -18,7 +18,7 @@ Out of [all the ways to serialize a JavaScript object][1], it is likely the best
 
 - `v8.js`: A polyfill for Node's [Serialization API](https://nodejs.org/api/v8.html#serialization-api).
 
-- `index.ts`: __TBD__: Implements the same format as Node's Serialization API, but without dependencies on `Buffer` or other Node specific classes.
+- `index.ts`: Implements the same format as Node's Serialization API, but without dependencies on `Buffer` or other Node specific classes.
 
 ## Prior Art
 

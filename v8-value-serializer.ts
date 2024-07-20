@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import { Buffer } from 'node:buffer';
-
 const kLatestVersion = 15;
 
 enum SerializationTag {
@@ -379,20 +377,10 @@ export class ValueSerializer {
 
   constructor(
     private delegate?: ValueSerializerDelegate,
-    options?: {
-      /** Will always encode strings as UTF-8. This can have positive effects on perf, but will mangle strings that aren't well-formed. */
-      forceUtf8?: boolean;
-      /** Arrays in JS can have non-integer keys. Checking for these is slow in JS userland and this options disables it.   */
-      ignoreArrayProperties?: boolean;
-      treatArrayBufferViewsAsHostObjects?: boolean;
-    },
   ) {
     this.buffer = new ArrayBuffer(0);
     this.bytes = new Uint8Array(this.buffer);
     this.hasCustomHostObjects = this.delegate?.hasCustomHostObjects ?? false;
-    this.forceUtf8 ??= options?.forceUtf8 ?? false;
-    this.ignoreArrayProperties ??= options?.ignoreArrayProperties ?? false;
-    this.treatArrayBufferViewsAsHostObjects ??= options?.treatArrayBufferViewsAsHostObjects ?? false;
   }
   
   private get view() {
@@ -402,6 +390,14 @@ export class ValueSerializer {
   writeHeader(): void {
     this.writeTag(SerializationTag.kVersion);
     this.writeVarInt(kLatestVersion);
+  }
+
+  setForceUtf8(mode: boolean): void {
+    this.forceUtf8 = mode;
+  }
+
+  setIgnoreArrayProperties(mode: boolean): void {
+    this.ignoreArrayProperties = mode;
   }
 
   setTreatArrayBufferViewsAsHostObjects(mode: boolean): void {
@@ -1279,12 +1275,10 @@ export class ValueDeserializer {
   constructor(
     private data: Uint8Array,
     private delegate?: ValueDeserializerDelegate,
-    options?: { forceUtf16?: boolean }
   ) {
     this.position = data.byteOffset;
     this.end = data.byteLength + data.byteLength;
     this.idMap = new Map();
-    this.forceUtf16 = options?.forceUtf16 ?? false;
     // this.GlobalBuffer = 'Buffer' in globalThis ? (globalThis as any).Buffer : undefined;
   }
 
@@ -1294,6 +1288,10 @@ export class ValueDeserializer {
 
   get wireFormatVersion() {
     return this.version;
+  }
+
+  setForceUtf16(forceUtf16: boolean) {
+    this.forceUtf16 = forceUtf16;
   }
 
   throwDataCloneError(message = ''): never {
