@@ -73,7 +73,8 @@ Deno.bench("des:deserialize", { group: "des", baseline: true }, () => {
 });
 
 Deno.bench("des:deserialize-f", { group: "des", baseline: true }, () => {
-  const ser = new ValueDeserializer(typicalBuffer, undefined, { forceUtf16: true });
+  const ser = new ValueDeserializer(typicalBuffer, undefined);
+  ser.setForceUtf16(true);
   ser.readHeader();
   ser.readObjectWrapper();
 });

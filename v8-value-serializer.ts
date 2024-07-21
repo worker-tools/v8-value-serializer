@@ -1,7 +1,3 @@
-// Copyright 2016 the V8 project authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 export const kLatestVersion = 15;
 
 export enum SerializationTag {
@@ -365,7 +361,6 @@ export interface ValueSerializerDelegate {
 export class ValueSerializer {
   private buffer: ArrayBuffer;
   private bytes: Uint8Array;
-  private cachedView?: DataView;
   private size: number = 0;
   private bufferCapacity: number = 0;
   private outOfMemory: boolean = false;
@@ -385,8 +380,9 @@ export class ValueSerializer {
     this.hasCustomHostObjects = this.delegate?.hasCustomHostObjects ?? false;
   }
   
+  private _view?: DataView;
   private get view() {
-    return this.cachedView ||= new DataView(this.buffer);
+    return this._view ??= new DataView(this.buffer);
   }
 
   writeHeader(): void {
@@ -542,7 +538,7 @@ export class ValueSerializer {
     this.buffer = newBuffer;
     this.bytes = newBytes
     this.bufferCapacity = requestedCapacity;
-    this.cachedView = undefined; // invalidate the view
+    this._view = undefined; // invalidate the view
   }
 
   writeByte(value: number): void {
@@ -562,7 +558,7 @@ export class ValueSerializer {
     const bytes = this.bytes.subarray(0, this.size);
     this.bytes = new Uint8Array(0);
     this.buffer = this.bytes.buffer;
-    this.cachedView = undefined; // invalidate the view
+    this._view = undefined; // invalidate the view
     this.size = 0;
     this.bufferCapacity = 0;
     this.idMap = new Map();
@@ -1228,9 +1224,9 @@ export class ValueSerializer {
   }
 }
 
-// HACK: chatgpt interpreted the c++ return type a null in JS. Rather than fight it I went along with it and fixed the cases where an actual null value is 
-// expected via this symbol. This isn't ideal, as one must remember to check everywhere, but it works and unlikely to change anyway.
-// Could be replace by a "Result" type (not a fan of the extra allocation), or throwing exceptions.
+// Since null is taken to mean failure in the code below, need to replace this symbol with actual null before external usage. 
+// This isn't ideal, as one must remember to replace it everywhere, but it works and unlikely to change anyway.
+// Could be replace by a "Result" type, or throwing exceptions.
 const sNull = Symbol('null');
 
 const JSArrayBufferViewFlags = {
@@ -1576,9 +1572,12 @@ export class ValueDeserializer {
     return bigint;
   }
 
-  private tdUtf8 = new TextDecoder('utf-8');
-  private tdLatin1 = new TextDecoder('latin1');
-  private tdUtf16 = new TextDecoder('utf-16le', { fatal: false });
+  private _tdUtf8?: TextDecoder;
+  private _tdUtf16?: TextDecoder;
+  private _tdLatin1?: TextDecoder;
+  private get tdUtf8() { return this._tdUtf8 ??= new TextDecoder('utf-8') }
+  private get tdUtf16() { return this._tdUtf16 ??= new TextDecoder('utf-16le', { fatal: false }) }
+  private get tdLatin1() { return this._tdLatin1 ??= new TextDecoder('latin1') }
 
   private readUtf8String(): string | null {
     const utf8Length = this.readVarInt();
