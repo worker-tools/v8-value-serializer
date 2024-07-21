@@ -21,7 +21,7 @@ function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
   return -1;
 }
 
-function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBufferView)|(DataViewConstructor)) & {BYTES_PER_ELEMENT?: number} {
+function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBufferView)|(DataViewConstructor)) & {BYTES_PER_ELEMENT?: number}|undefined {
   if (index === 0) return Int8Array;
   if (index === 1) return Uint8Array;
   if (index === 2) return Uint8ClampedArray;
@@ -35,7 +35,6 @@ function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBuffer
   if (index === 10) return Uint8Array;
   if (index === 11) return BigInt64Array;
   if (index === 12) return BigUint64Array;
-  // @ts-expect-error
   return undefined;
 }
 
@@ -131,6 +130,7 @@ class Serializer implements ValueSerializerDelegate {
 }
 
 export interface DeserializerOptions {
+  /** This will treat 2-byte strings as UTF-16. This can significantly improve performance, but requires that all strings were well-formed during encoding. */
   forceUtf16?: boolean
 }
 
@@ -146,19 +146,17 @@ class Deserializer implements ValueDeserializerDelegate {
         : new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     this.#deserializer = new ValueDeserializer(data, this);
     this.#deserializer.setForceUtf16(options?.forceUtf16 ?? false);
-  }
-
-  #readUint32(): number {
-    const n =  this.#deserializer.readUint32()!;
-    if (!n) throw new DOMException('', 'DataCloneError');
-    return n;
+    this.#readHeader();
   }
 
   readHostObject() {
-    const typeIndex = this.#readUint32();
+    const typeIndex = this.#deserializer.readUint32();
     const Ctor = arrayBufferViewIndexToType(typeIndex);
-    const byteLength = this.#readUint32();
-    const byteOffset = this.#deserializer.readRawBytesNoAlloc(byteLength)!;
+    if (!Ctor) throw new DOMException('Invalid ArrayBufferView type index', 'DataCloneError');
+    const byteLength = this.#deserializer.readUint32();
+    if (!byteLength) throw new DOMException('Invalid ArrayBufferView byte length', 'DataCloneError');
+    const byteOffset = this.#deserializer.readRawBytesNoAlloc(byteLength);
+    if (!byteOffset) throw new DOMException('Could not read ArrayBufferView', 'DataCloneError');
     const BYTES_PER_ELEMENT = Ctor.BYTES_PER_ELEMENT || 1;
 
     const offset = this.#buffer.byteOffset + byteOffset;
@@ -184,9 +182,7 @@ class Deserializer implements ValueDeserializerDelegate {
   }
 
   get wireFormatVersion(): number {
-    const v = this.#deserializer.wireFormatVersion;
-    if (!v) throw Error('getWireFormatVersion() failed');
-    return v;
+    return this.#deserializer.wireFormatVersion!;
   }
 
   getSharedArrayBufferFromId(_cloneId: number): SharedArrayBuffer|null {
@@ -194,7 +190,6 @@ class Deserializer implements ValueDeserializerDelegate {
   }
 
   deserialize(): any {
-    this.#readHeader();
     return this.#readValue();
   }
 }
