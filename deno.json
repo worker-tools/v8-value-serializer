@@ -1,6 +1,6 @@
 {
   "workspace": [
-    "./node-serialization-polyfill",
+    "./node-serialization-api",
     "./v8-value-serializer",
     "./v8-value-serializer-core"
   ],

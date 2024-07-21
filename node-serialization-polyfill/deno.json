@@ -1,5 +1,0 @@
-{
-  "name": "@workers/node-serialization-polyfill",
-  "version": "0.1.0",
-  "exports": "./v8.ts"
-}

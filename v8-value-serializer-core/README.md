@@ -1,5 +1,3 @@
 # V8 Value Serializer
 
-A pure JS implementation of V8's value serialization format.
-
-See `v8-value-serializer` and `node-serialization-polyfill` for usage.
+A port of V8's [`value-serializer.cc`](https://github.com/v8/v8/blob/main/src/objects/value-serializer.cc) to pure JS. The API is C-like and not recommended for direct use.
