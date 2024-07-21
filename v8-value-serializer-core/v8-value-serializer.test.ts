@@ -156,3 +156,30 @@ Deno.test("serialize", async (t) => {
     assertEquals(V8.deserialize(actual), V8.deserialize(expected))
   });
 })
+
+Deno.test("stream", () => {
+  const obj = {
+    num: 3,
+    date: new Date(),
+    data: crypto.getRandomValues(new Uint8Array(4)),
+    dict: new Map([['foo', 11], ['bar', 12] ]),
+    array: [1, 2, 3, /* hole in array */, 5],
+    regex: /xyz/g,
+    error: new Error('xxx', { cause: new TypeError('yyy') })
+  };
+  
+  const ser = new ValueSerializer()
+  ser.writeHeader();
+  ser.writeObject(obj);
+  ser.writeObject(obj);
+  const buffer = ser.release();
+
+  const partial = buffer.slice(0, buffer.length);
+
+  const des = new ValueDeserializer(partial)
+  des.readHeader();
+  console.log(des.readObjectWrapper());
+  console.log(des.readObjectWrapper());
+})
+
+

@@ -1264,8 +1264,8 @@ export class ValueDeserializer {
     private data: Uint8Array,
     private delegate?: ValueDeserializerDelegate,
   ) {
-    this.position = data.byteOffset;
-    this.end = data.byteOffset + data.byteLength;
+    this.position = 0;
+    this.end = data.byteLength;
     this.idMap = new Map();
     // this.GlobalBuffer = 'Buffer' in globalThis ? (globalThis as any).Buffer : undefined;
   }
@@ -1451,7 +1451,8 @@ export class ValueDeserializer {
   }
 
   private readObjectInternal(): any {
-    const tag = this.readTag();
+    const tag = this.peekTag()
+    if (tag) this.consumeTag(tag);
     switch (tag) {
       case SerializationTag.kVerifyObjectCount:
         if (this.readVarInt() === null) return null;
