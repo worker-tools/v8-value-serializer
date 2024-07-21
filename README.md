@@ -2,9 +2,9 @@
 
 A pure JS implementation of V8's value serialization format.
 
-V8 has an internal object serialization format that implements the [Structured Clone Algorithm][sca] that is used to implement functions like `structuredClone` and `postMessage`.
+V8 has an internal object serialization format that implements the [Structured Clone Algorithm][sca] and is used to implement things like `structuredClone` and `postMessage`.
 
-Node users have access to this format via the [`v8` module][v8m], but other JS runtimes, including all browser environments, can only use this format through userland implementations. This library is currently the only such implementation that matches latest protocol version and supports both encoding and decoding. (See [Prior Art](#prior-art) for others).
+Node users have access to this format via the [`v8` module][v8m], but other JS runtimes, including all browser environments, can only use it through userland implementations. This library is currently the only such implementation that supports the latest protocol version and supports both encoding and decoding. (See [Prior Art](#prior-art) for others).
 
 The module is a direct port of the C++ source from the V8 repository and aims for the best cross-section between accuracy and performance. 
 
@@ -17,9 +17,9 @@ Out of [all the ways to serialize a JavaScript object][1], it is likely the best
 
 ## Contents
 
-- `v8-value-serializer.ts`: A port of V8's [`value-serializer.cc`](https://github.com/v8/v8/blob/main/src/objects/value-serializer.cc) to pure JS. The API is C-like and not recommended for direct use
+- `v8-value-serializer.ts`: A port of V8's [`value-serializer.cc`](https://github.com/v8/v8/blob/main/src/objects/value-serializer.cc) to pure JS. The API is C-like and not recommended for direct use.
 
-- `v8.js`: A polyfill for Node's [Serialization API](https://nodejs.org/api/v8.html#serialization-api). It differs from the base version by treating typed arrays closer to what developers would expect. See [here](https://github.com/nodejs/node/blob/v22.5.1/lib/v8.js#L327-L333) for details.
+- `v8.js`: A polyfill for Node's [Serialization API](https://nodejs.org/api/v8.html#serialization-api).
 
 - `index.ts`: Implements the same format as Node's Serialization API, but without dependencies on `Buffer` or other Node modules.
 
