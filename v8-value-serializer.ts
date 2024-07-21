@@ -363,7 +363,6 @@ export class ValueSerializer {
   private bytes: Uint8Array;
   private size: number = 0;
   private bufferCapacity: number = 0;
-  private outOfMemory: boolean = false;
   private treatArrayBufferViewsAsHostObjects = false;
   private hasCustomHostObjects = false;
 
@@ -581,11 +580,6 @@ export class ValueSerializer {
   }
 
   writeObject(object: unknown): boolean {
-    // There is no sense in trying to proceed if we've previously run out of
-    // memory. Bail immediately, as this likely implies that some write has
-    // previously failed and so the buffer is corrupt.
-    if (this.outOfMemory) return true;
-  
     if (object == null || typeof object === 'boolean') {
       this.writeOddball(object);
       return true;
@@ -1205,10 +1199,6 @@ export class ValueSerializer {
 
     } catch {
       return null;
-    }
-
-    if (this.outOfMemory) {
-      return true;
     }
 
     return result;
