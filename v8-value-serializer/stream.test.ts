@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { V8ValueDeserializerStream, V8ValueSerializerStream } from "./stream.ts";
+import { DeserializerStream, SerializerStream } from "./stream.ts";
 import { encodeHex } from "jsr:@std/encoding";
 
 Deno.test("basic stream support", async () => {
@@ -9,8 +9,8 @@ Deno.test("basic stream support", async () => {
     yield { a: 3 };
   })());
   const actual = await Array.fromAsync(stream
-    .pipeThrough(new V8ValueSerializerStream())
-    .pipeThrough(new V8ValueDeserializerStream())
+    .pipeThrough(new SerializerStream())
+    .pipeThrough(new DeserializerStream())
   );
   assertEquals(actual, [{ a: 1 }, { a: 2 }, { a: 3 }]);
 })
@@ -21,7 +21,7 @@ Deno.test("basic messages with jitter", async () => {
   const expected = [{ a: 1 }, { a: 2 }, { a: 3 }];
   const stream = ReadableStream.from(expected);
   const actual = await Array.fromAsync(stream
-    .pipeThrough(new V8ValueSerializerStream())
+    .pipeThrough(new SerializerStream())
     .pipeThrough(new TransformStream({
       transform(chunk, ctrl) {
         const splitAt = Math.floor(Math.random() * chunk.byteLength);
@@ -30,7 +30,7 @@ Deno.test("basic messages with jitter", async () => {
         ctrl.enqueue(chunk.subarray(splitAt));
       }
     }))
-    .pipeThrough(new V8ValueDeserializerStream())
+    .pipeThrough(new DeserializerStream())
   );
   assertEquals(actual, expected);
 })
@@ -43,7 +43,7 @@ Deno.test("long messages with jitter", async () => {
   ];
   const stream = ReadableStream.from(expected);
   const actual = await Array.fromAsync(stream
-    .pipeThrough(new V8ValueSerializerStream())
+    .pipeThrough(new SerializerStream())
     .pipeThrough(new TransformStream({
       async transform(chunk, ctrl) {
         const numSplits = Math.floor(Math.random() * 10);
@@ -57,7 +57,7 @@ Deno.test("long messages with jitter", async () => {
         ctrl.enqueue(chunk);
       }
     }))
-    .pipeThrough(new V8ValueDeserializerStream())
+    .pipeThrough(new DeserializerStream())
   );
   assertEquals(actual, expected);
 })
@@ -66,8 +66,8 @@ Deno.test("empty values", async () => {
   const expected = [null, undefined, false, '', {}, []];
   const stream = ReadableStream.from(expected);
   const actual = await Array.fromAsync(stream
-    .pipeThrough(new V8ValueSerializerStream())
-    .pipeThrough(new V8ValueDeserializerStream())
+    .pipeThrough(new SerializerStream())
+    .pipeThrough(new DeserializerStream())
   );
   assertEquals(actual, expected);
 })

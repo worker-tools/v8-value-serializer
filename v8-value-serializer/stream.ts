@@ -1,6 +1,6 @@
 import { Serializer, SerializerOptions, Deserializer, DeserializerOptions } from "./serdes.ts";
 
-export class V8ValueSerializerStream extends TransformStream<any, Uint8Array> {
+export class SerializerStream extends TransformStream<any, Uint8Array> {
   constructor(options?: SerializerOptions) {
     super({
       transform(chunk, controller) {
@@ -12,7 +12,7 @@ export class V8ValueSerializerStream extends TransformStream<any, Uint8Array> {
   }
 }
 
-export class V8ValueDeserializerStream extends TransformStream<Uint8Array, any> {
+export class DeserializerStream extends TransformStream<Uint8Array, any> {
   constructor(options?: DeserializerOptions) {
     let incompleteBuffer: Uint8Array|null = null;
     super({
