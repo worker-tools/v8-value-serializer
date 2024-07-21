@@ -1265,7 +1265,7 @@ export class ValueDeserializer {
     private delegate?: ValueDeserializerDelegate,
   ) {
     this.position = data.byteOffset;
-    this.end = data.byteLength + data.byteLength;
+    this.end = data.byteOffset + data.byteLength;
     this.idMap = new Map();
     // this.GlobalBuffer = 'Buffer' in globalThis ? (globalThis as any).Buffer : undefined;
   }
@@ -1284,7 +1284,7 @@ export class ValueDeserializer {
   }
 
   throwDataCloneError(message = ''): never {
-    throw new DOMException(message ?? 'TODO', "DataCloneError");
+    throw new DOMException(message, "DataCloneError");
   }
 
   readHeader(): boolean {

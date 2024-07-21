@@ -4,7 +4,7 @@ import {
   ValueDeserializerDelegate, 
   ValueSerializer, 
   ValueSerializerDelegate
-} from "@workers/v8-value-serializer-core";
+} from "jsr:@workers/v8-value-serializer-core";
 
 function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceStart: number, sourceEnd: number) {
   dest.set(source.subarray(sourceStart, sourceEnd), destStart);
