@@ -1,8 +1,10 @@
 # Node Serialization API Polyfill
 
-A pure JS polyfill for Node's [Serialization API](https://nodejs.org/api/v8.html#serialization-api).
+A polyfill for Node's [Serialization API](https://nodejs.org/api/v8.html#serialization-api).
 
 ## Usage
+
+Note: This module depends on `node:buffer`. For a pure JS version use the [V8 Value Serializer module](https://jsr.io/@workers/v8-value-serializer) instead.
 
 ```ts
 import { serialize, deserialize } from 'jsr:@workers/node-serialization-api';
