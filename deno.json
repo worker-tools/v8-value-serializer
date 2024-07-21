@@ -1,0 +1,21 @@
+{
+  "workspace": [
+    "./node-serialization-polyfill",
+    "./v8-value-serializer",
+    "./v8-value-serializer-core"
+  ],
+  "lint": {
+    "rules": {
+      "exclude": [
+        "no-unused-vars",
+        "no-explicit-any",
+        "no-cond-assign",
+        "no-empty",
+        "ban-ts-comment",
+        "ban-types",
+        "no-case-declarations",
+        "no-array-constructor"
+      ]
+    }
+  }
+}

@@ -15,14 +15,6 @@ Out of [all the ways to serialize a JavaScript object][1], it is likely the best
 [v8m]: https://nodejs.org/api/v8.html#serialization-api
 [1]: https://qwtel.com/posts/software/how-to-serialize-a-javascript-object/
 
-## Contents
-
-- `v8-value-serializer.ts`: A port of V8's [`value-serializer.cc`](https://github.com/v8/v8/blob/main/src/objects/value-serializer.cc) to pure JS. The API is C-like and not recommended for direct use.
-
-- `v8.js`: A polyfill for Node's [Serialization API](https://nodejs.org/api/v8.html#serialization-api).
-
-- `index.ts`: Implements the same format as Node's Serialization API, but without dependencies on `Buffer` or other Node modules.
-
 ## Prior Art
 
 - https://github.com/addaleax/serdes/blob/master/index.js

@@ -1,0 +1,8 @@
+{
+  "name": "@workers/node-serialization-polyfill",
+  "version": "0.1.0",
+  "exports": "./v8.ts",
+  "imports": {
+    "@workers/v8-value-serializer-core": "jsr:@workers/v8-value-serializer-core"
+  }
+}

@@ -1,4 +1,10 @@
-import { ArrayBufferViewTag, ValueDeserializer, ValueDeserializerDelegate, ValueSerializer, ValueSerializerDelegate } from "./v8-value-serializer.ts";
+import { 
+  ArrayBufferViewTag, 
+  ValueDeserializer, 
+  ValueDeserializerDelegate, 
+  ValueSerializer, 
+  ValueSerializerDelegate
+} from "@workers/v8-value-serializer-core";
 
 function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceStart: number, sourceEnd: number) {
   dest.set(source.subarray(sourceStart, sourceEnd), destStart);
@@ -221,7 +227,7 @@ class Deserializer implements ValueDeserializerDelegate {
   }
 }
 
-export function serialize(value: any, options: SerializerOptions): Uint8Array {
+export function serialize(value: any, options?: SerializerOptions): Uint8Array {
   return new Serializer(options).serialize(value);
 }
 

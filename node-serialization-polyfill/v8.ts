@@ -1,29 +1,16 @@
-// @ts-check
 import { Buffer } from 'node:buffer';
 import { Serializer, Deserializer } from "./node-serdes.ts";
 
 //#region lib
-/**
- * @param {unknown} obj 
- * @returns {string}
- */
-function ObjectPrototypeToString(obj) {
+function ObjectPrototypeToString(obj: unknown): string {
   return Object.prototype.toString.call(obj);
 }
 
-/**
- * @param {Uint8Array} source 
- * @param {Uint8Array} dest 
- * @param {number} destStart 
- * @param {number} sourceStart 
- * @param {number} sourceEnd 
- */
-function copy(source, dest, destStart, sourceStart, sourceEnd) {
+function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceStart: number, sourceEnd: number) {
   dest.set(source.subarray(sourceStart, sourceEnd), destStart);
 }
 
-/** @param {ArrayBuffer} ab @param {number} o @param {number} l */
-function SlowBuffer(ab, o, l) {
+function SlowBuffer(ab: ArrayBuffer, o: number, l: number) {
   return Buffer.from(ab, o, l);
 }
 SlowBuffer.BYTES_PER_ELEMENT = 1;
@@ -36,10 +23,8 @@ Serializer.prototype._getDataCloneError = Error;
 
 /**
  * Reads raw bytes from the deserializer's internal buffer.
- * @param {number} length
- * @returns {Buffer}
  */
-Deserializer.prototype.readRawBytes = function readRawBytes(length) {
+Deserializer.prototype.readRawBytes = function readRawBytes(length: number): Buffer {
   const offset = this._readRawBytes(length);
   // `this.buffer` can be a Buffer or a plain Uint8Array, so just calling
   // `.slice()` doesn't work.
@@ -48,11 +33,7 @@ Deserializer.prototype.readRawBytes = function readRawBytes(length) {
                      length);
 };
 
-/**
- * @param {ArrayBufferView} abView 
- * @returns {number}
- */
-function arrayBufferViewTypeToIndex(abView) {
+function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
   const type = ObjectPrototypeToString(abView);
   if (type === '[object Int8Array]') return 0;
   if (type === '[object Uint8Array]') return 1;
@@ -70,11 +51,7 @@ function arrayBufferViewTypeToIndex(abView) {
   return -1;
 }
 
-/**
- * @param {number|null} index 
- * @returns {((new () => ArrayBufferView)|(DataViewConstructor)) & {BYTES_PER_ELEMENT?: number}}
- */
-function arrayBufferViewIndexToType(index) {
+function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBufferView)|(DataViewConstructor)) & {BYTES_PER_ELEMENT?: number} {
   if (index === 0) return Int8Array;
   if (index === 1) return Uint8Array;
   if (index === 2) return Uint8ClampedArray;
@@ -85,7 +62,7 @@ function arrayBufferViewIndexToType(index) {
   if (index === 7) return Float32Array;
   if (index === 8) return Float64Array;
   if (index === 9) return DataView;
-  if (index === 10) return /** @type {typeof Uint8Array} */(/** @type {unknown} */(SlowBuffer))
+  if (index === 10) return SlowBuffer as unknown as typeof Uint8Array;
   if (index === 11) return BigInt64Array;
   if (index === 12) return BigUint64Array;
   // @ts-expect-error
@@ -103,10 +80,8 @@ class DefaultSerializer extends Serializer {
   /**
    * Used to write some kind of host object, i.e. an
    * object that is created by native C++ bindings.
-   * @param {ArrayBufferView} abView
-   * @returns {void}
    */
-  _writeHostObject(abView) {
+  _writeHostObject(abView: ArrayBufferView): void {
     // Keep track of how to handle different ArrayBufferViews. The default
     // Serializer for Node does not use the V8 methods for serializing those
     // objects because Node's `Buffer` objects use pooled allocation in many
@@ -134,9 +109,8 @@ class DefaultDeserializer extends Deserializer {
   /**
    * Used to read some kind of host object, i.e. an
    * object that is created by native C++ bindings.
-   * @returns {any}
    */
-  _readHostObject() {
+  _readHostObject(): any {
     const typeIndex = this.readUint32();
     const ctor = arrayBufferViewIndexToType(typeIndex);
     const byteLength = this.readUint32();
@@ -161,10 +135,8 @@ class DefaultDeserializer extends Deserializer {
 /**
  * Uses a `DefaultSerializer` to serialize `value`
  * into a buffer.
- * @param {any} value
- * @returns {Buffer}
  */
-function serialize(value) {
+function serialize(value: any): Buffer {
   const ser = new DefaultSerializer();
   ser.writeHeader();
   ser.writeValue(value);
@@ -174,10 +146,9 @@ function serialize(value) {
 /**
  * Uses a `DefaultDeserializer` with default options
  * to read a JavaScript value from a buffer.
- * @param {Buffer | ArrayBufferView | DataView} buffer
  * @returns {any}
  */
-function deserialize(buffer) {
+function deserialize(buffer: Buffer | ArrayBufferView | DataView): any {
   const der = new DefaultDeserializer(buffer);
   der.readHeader();
   return der.readValue();

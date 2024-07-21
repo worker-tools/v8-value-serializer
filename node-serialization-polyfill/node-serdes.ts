@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { ValueSerializer, ValueSerializerDelegate, ValueDeserializer, ValueDeserializerDelegate } from "./v8-value-serializer.ts";
+import { ValueSerializer, ValueSerializerDelegate, ValueDeserializer, ValueDeserializerDelegate } from "@workers/v8-value-serializer-core";
 
 // This file has no direct C++ equivalent, it's a mishmash of the following files, 
 // with the goal of making node's v8 module (v8.js) work without modification.
@@ -95,7 +95,7 @@ export abstract class Serializer implements ISerializer, ValueSerializerDelegate
     return true;
   }
 
-  releaseBuffer() {
+  releaseBuffer(): Buffer {
     const buffer = this.data!.data!;
     return Buffer.from(buffer);
   }
@@ -175,7 +175,7 @@ export abstract class Serializer implements ISerializer, ValueSerializerDelegate
     return true
   }
 
-  get hasCustomHostObjects() { return false };
+  get hasCustomHostObjects(): false { return false };
 
   isHostObject(_object: unknown): boolean {
     // Shouldn't be necessary due to `treatArrayBufferViewsAsHostObjects`
@@ -268,7 +268,7 @@ export abstract class Deserializer implements IDeserializer, ValueDeserializerDe
     return Buffer.from(bytes);
   }
 
-  get buffer() {
+  get buffer(): Uint8Array {
     return this.data;
   }
 

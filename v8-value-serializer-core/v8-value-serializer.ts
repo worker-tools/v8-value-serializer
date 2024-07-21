@@ -553,7 +553,7 @@ export class ValueSerializer {
   }
 
   // XXX: Maybe just prevent further writes instead of resetting?
-  release() {
+  release(): Uint8Array {
     const bytes = this.bytes.subarray(0, this.size);
     this.bytes = new Uint8Array(0);
     this.buffer = this.bytes.buffer;
@@ -1274,7 +1274,8 @@ export class ValueDeserializer {
     return this.cachedView || (this.cachedView = new DataView(this.data.buffer));
   }
 
-  get wireFormatVersion() {
+  get wireFormatVersion(): number {
+    if (!this.version) throw new Error('Wire format version not set');
     return this.version;
   }
 
@@ -1406,7 +1407,7 @@ export class ValueDeserializer {
   }
 
   private suppressDeserializationErrors = false;
-  private version!: number
+  private version?: number
   private version13BrokenDataMode!: boolean
 
   readObjectWrapper(): any {
@@ -1518,7 +1519,7 @@ export class ValueDeserializer {
       //   if (this.version >= 15) return this.readSharedObject();
       //   return null;
       default:
-        if (this.version < 13) {
+        if (this.wireFormatVersion < 13) {
           this.position--;
           return this.readHostObject();
         }
@@ -1527,7 +1528,7 @@ export class ValueDeserializer {
   }
 
   private readString(): string | null {
-    if (this.version < 12) return this.readUtf8String();
+    if (this.wireFormatVersion < 12) return this.readUtf8String();
     
     const object = this.readObject();
     if (object === null || typeof object !== "string") {
@@ -1691,7 +1692,7 @@ export class ValueDeserializer {
       // Serialization versions less than 11 encode the hole the same as
       // undefined. For consistency with previous behavior, store these as the
       // hole. Past version 11, undefined means undefined.
-      if (this.version < 11 && element === undefined) continue;
+      if (this.wireFormatVersion < 11 && element === undefined) continue;
 
       array[i] = element === sNull ? null : element;
     }
@@ -1923,7 +1924,7 @@ export class ValueDeserializer {
       return null;
     }
 
-    const shouldReadFlags = this.version >= 14 || this.version13BrokenDataMode;
+    const shouldReadFlags = this.wireFormatVersion >= 14 || this.version13BrokenDataMode;
     if (shouldReadFlags && (flags = this.readVarInt()) === null) {
       return null;
     }
