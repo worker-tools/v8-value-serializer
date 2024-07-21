@@ -1294,6 +1294,7 @@ export class ValueDeserializer {
       if (version === null || version > kLatestVersion) {
         this.throwDataCloneError('Data clone deserialization version error');
       }
+      this.version = version;
     }
     return true;
   }
