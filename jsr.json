@@ -1,0 +1,11 @@
+{
+  "name": "@workers/v8-value-serializer",
+  "version": "0.1.0",
+  "exports": "./index.ts",
+  "publish": {
+    "exclude": [
+      "*.bench.ts",
+      "*.test.ts"
+    ]
+  }
+}
