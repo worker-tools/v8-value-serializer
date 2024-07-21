@@ -1,4 +1,4 @@
-import { ValueDeserializer, ValueDeserializerDelegate, ValueSerializer, ValueSerializerDelegate } from "./v8-value-serializer.ts";
+import { ArrayBufferViewTag, ValueDeserializer, ValueDeserializerDelegate, ValueSerializer, ValueSerializerDelegate } from "./v8-value-serializer.ts";
 
 function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceStart: number, sourceEnd: number) {
   dest.set(source.subarray(sourceStart, sourceEnd), destStart);
@@ -15,27 +15,54 @@ function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
   if (abView instanceof Float32Array) return 7;
   if (abView instanceof Float64Array) return 8;
   if (abView instanceof DataView) return 9;
-  // Index 10 is FastBuffer.
   if (abView instanceof BigInt64Array) return 11;
   if (abView instanceof BigUint64Array) return 12;
+  // if (abView instanceof Int8Array) return ArrayBufferViewTag.kInt8Array;
+  // if (abView instanceof Uint8Array) return ArrayBufferViewTag.kUint8Array;
+  // if (abView instanceof Uint8ClampedArray) return ArrayBufferViewTag.kUint8ClampedArray;
+  // if (abView instanceof Int16Array) return ArrayBufferViewTag.kInt16Array;
+  // if (abView instanceof Uint16Array) return ArrayBufferViewTag.kUint16Array;
+  // if (abView instanceof Int32Array) return ArrayBufferViewTag.kInt32Array;
+  // if (abView instanceof Uint32Array) return ArrayBufferViewTag.kUint32Array;
+  // if (abView instanceof globalThis.Float16Array) return ArrayBufferViewTag.kFloat16Array;
+  // if (abView instanceof Float32Array) return ArrayBufferViewTag.kFloat32Array;
+  // if (abView instanceof Float64Array) return ArrayBufferViewTag.kFloat64Array;
+  // if (abView instanceof BigInt64Array) return ArrayBufferViewTag.kBigInt64Array;
+  // if (abView instanceof BigUint64Array) return ArrayBufferViewTag.kBigUint64Array;
+  // if (abView instanceof DataView) return ArrayBufferViewTag.kDataView;
   return -1;
 }
 
-function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBufferView)|(DataViewConstructor)) & {BYTES_PER_ELEMENT?: number}|undefined {
-  if (index === 0) return Int8Array;
-  if (index === 1) return Uint8Array;
-  if (index === 2) return Uint8ClampedArray;
-  if (index === 3) return Int16Array;
-  if (index === 4) return Uint16Array;
-  if (index === 5) return Int32Array;
-  if (index === 6) return Uint32Array;
-  if (index === 7) return Float32Array;
-  if (index === 8) return Float64Array;
-  if (index === 9) return DataView;
-  if (index === 10) return Uint8Array;
-  if (index === 11) return BigInt64Array;
-  if (index === 12) return BigUint64Array;
-  return undefined;
+function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBufferView)|DataViewConstructor) & {BYTES_PER_ELEMENT?: number}|undefined {
+  switch (index) {
+    case 0: return Int8Array;
+    case 1: return Uint8Array;
+    case 2: return Uint8ClampedArray;
+    case 3: return Int16Array;
+    case 4: return Uint16Array;
+    case 5: return Int32Array;
+    case 6: return Uint32Array;
+    case 7: return Float32Array;
+    case 8: return Float64Array;
+    case 9: return DataView;
+    case 10: return Uint8Array;
+    case 11: return BigInt64Array;
+    case 12: return BigUint64Array;
+    case ArrayBufferViewTag.kInt8Array: return Int8Array;
+    case ArrayBufferViewTag.kUint8Array: return Uint8Array;
+    case ArrayBufferViewTag.kUint8ClampedArray: return Uint8ClampedArray;
+    case ArrayBufferViewTag.kInt16Array: return Int16Array;
+    case ArrayBufferViewTag.kUint16Array: return Uint16Array;
+    case ArrayBufferViewTag.kInt32Array: return Int32Array;
+    case ArrayBufferViewTag.kUint32Array: return Uint32Array;
+    case ArrayBufferViewTag.kFloat16Array: return globalThis.Float16Array;
+    case ArrayBufferViewTag.kFloat32Array: return Float32Array;
+    case ArrayBufferViewTag.kFloat64Array: return Float64Array;
+    case ArrayBufferViewTag.kBigInt64Array: return BigInt64Array;
+    case ArrayBufferViewTag.kBigUint64Array: return BigUint64Array;
+    case ArrayBufferViewTag.kDataView: return DataView;
+    default: return undefined;
+  }
 }
 
 export interface SerializerOptions {
