@@ -71,6 +71,7 @@ function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBuffer
   }
 }
 
+/** Customize behavior of the serializer. */
 export interface SerializerOptions {
   /** Will always encode strings as UTF-8. This can have positive effects on perf, but will mangle strings that aren't well-formed. */
   forceUtf8?: boolean
@@ -162,6 +163,7 @@ class Serializer implements ValueSerializerDelegate {
   }
 }
 
+/** Customize behavior of the serializer. */
 export interface DeserializerOptions {
   /** This will treat 2-byte strings as UTF-16. This can significantly improve performance, but requires that all strings were well-formed during encoding. */
   forceUtf16?: boolean
@@ -227,10 +229,12 @@ class Deserializer implements ValueDeserializerDelegate {
   }
 }
 
+/** Serialize a JavaScript object according to the Structured Clone Algorithm */
 export function serialize(value: any, options?: SerializerOptions): Uint8Array {
   return new Serializer(options).serialize(value);
 }
 
+/** Deserialize a JavaScript object that was serialized using either this library or node's `v8` module. */
 export function deserialize(buffer: BufferSource, options?: DeserializerOptions): any {
   return new Deserializer(buffer, options).deserialize();
 }
