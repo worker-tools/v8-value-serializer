@@ -2,6 +2,7 @@ import { Deserializer, DeserializerOptions, Serializer, SerializerOptions } from
 
 export type { ValueDeserializerDelegate, ValueSerializerDelegate } from "./serdes.ts";
 export type { DeserializerOptions, SerializerOptions };
+export { Deserializer, Serializer };
 
 /** Serialize a JavaScript object according to the Structured Clone Algorithm */
 export function serialize(value: any, options?: SerializerOptions): Uint8Array {
