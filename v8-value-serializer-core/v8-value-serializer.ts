@@ -255,6 +255,19 @@ function calcBigIntSerializationByteLength(bigint: bigint): number {
   return adjustedByteLength;
 }
 
+function bigIntFromSerializedDigits(digitsStorage: Uint8Array, sign: boolean): bigint {
+  let bigint = 0n;
+  let factor = 1n;
+  for (let i = 0; i < digitsStorage.length; i++) {
+    bigint += BigInt(digitsStorage[i]) * factor;
+    factor <<= 8n; // equivalent to multiplying by 256
+  }
+  if (sign) {
+    return -bigint;
+  }
+  return bigint;
+}
+
 function clz64(n: bigint) {
   if (n <= 0n) {
       return 64; // For non-positive values, return 64 as the maximum number of leading zeros
@@ -474,6 +487,7 @@ export class ValueSerializer {
     const byteLength = bitfield >>> 1;
     this.writeVarInt(bitfield);
     this.ensureCapacity(byteLength);
+    bigint = bigint < 0n ? -bigint : bigint;
     let index = 0;
     while (bigint > 0) {
       this.bytes[this.size + (index++)] = Number(bigint & 0xFFn);
@@ -1548,25 +1562,12 @@ export class ValueDeserializer {
     const bitfield = this.readVarInt();
     if (bitfield === null) return null;
 
+    const signBit = bitfield & 1;
     const byteLength = bitfield >>> 1;
     const digitsStorage = this.readRawBytes(byteLength);
     if (digitsStorage === null) return null;
 
-    return this.bigIntFromSerializedDigits(digitsStorage, bitfield);
-  }
-
-  // XXX: Should probably co-locate with the serializer (writeBigIntContents in ValueSerializer)
-  private bigIntFromSerializedDigits(digitsStorage: Uint8Array, bitfield: number): bigint {
-    let bigint = 0n;
-    let factor = 1n;
-    for (let i = 0; i < digitsStorage.length; i++) {
-      bigint += BigInt(digitsStorage[i]) * factor;
-      factor <<= 8n; // equivalent to multiplying by 256
-    }
-    if (bitfield & 1) {
-      bigint = -bigint;
-    }
-    return bigint;
+    return bigIntFromSerializedDigits(digitsStorage, !!signBit);
   }
 
   private _tdUtf8?: TextDecoder;
