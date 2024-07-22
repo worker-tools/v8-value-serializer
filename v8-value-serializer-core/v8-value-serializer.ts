@@ -180,8 +180,8 @@ type TypedArrayConstructor =
   | typeof globalThis.Float16Array
   | Float32ArrayConstructor
   | Float64ArrayConstructor
-  | BigInt64ArrayConstructor
-  | BigUint64ArrayConstructor;
+  | typeof globalThis.BigInt64Array
+  | typeof globalThis.BigUint64Array;
 
 const TypedArray = Object.getPrototypeOf(Uint8Array);
 
@@ -284,6 +284,10 @@ function stringFromCharCode(bytes: Uint8Array|Uint16Array): string {
   }
   return result;
 }
+
+// Helper to fail certain instanceof checks
+function Never() {}
+
 //#endregion
 
 export interface ValueSerializerDelegate {
@@ -572,7 +576,7 @@ export class ValueSerializer {
     }
 
     // Ensure the array buffer is not shared (assuming we have a way to check this in JS)
-    if (arrayBuffer instanceof globalThis.SharedArrayBuffer) {
+    if (arrayBuffer instanceof (globalThis.SharedArrayBuffer ?? Never)) {
       throw new Error('SharedArrayBuffer cannot be transferred');
     }
 
@@ -764,7 +768,7 @@ export class ValueSerializer {
     if (receiver instanceof Set) {
       return this.writeJSSet(receiver);
     } 
-    if (receiver instanceof ArrayBuffer || receiver instanceof globalThis.SharedArrayBuffer) {
+    if (receiver instanceof ArrayBuffer || receiver instanceof (globalThis.SharedArrayBuffer ?? Never)) {
       return this.writeJSArrayBuffer(receiver);
     } 
     if (isTypedArray(receiver) || receiver instanceof DataView) {
@@ -951,7 +955,7 @@ export class ValueSerializer {
   }
 
   private writeJSArrayBuffer(arrayBuffer: ArrayBuffer | SharedArrayBuffer): boolean {
-    if (arrayBuffer instanceof globalThis.SharedArrayBuffer) {
+    if (arrayBuffer instanceof (globalThis.SharedArrayBuffer ?? Never)) {
       if (!this.delegate) {
         return this.throwDataCloneError(arrayBuffer);
       }
@@ -1008,15 +1012,15 @@ export class ValueSerializer {
       return ArrayBufferViewTag.kInt32Array;
     } else if (view instanceof Uint32Array) {
       return ArrayBufferViewTag.kUint32Array;
-    } else if (view instanceof globalThis.Float16Array) {
+    } else if (view instanceof (globalThis.Float16Array ?? Never)) {
       return ArrayBufferViewTag.kFloat16Array;
     } else if (view instanceof Float32Array) {
       return ArrayBufferViewTag.kFloat32Array;
     } else if (view instanceof Float64Array) {
       return ArrayBufferViewTag.kFloat64Array;
-    } else if (view instanceof globalThis.BigInt64Array) {
+    } else if (view instanceof (globalThis.BigInt64Array ?? Never)) {
       return ArrayBufferViewTag.kBigInt64Array;
-    } else if (view instanceof globalThis.BigUint64Array) {
+    } else if (view instanceof (globalThis.BigUint64Array ?? Never)) {
       return ArrayBufferViewTag.kBigUint64Array;
     } else {
       this.throwDataCloneError(view);
@@ -2015,12 +2019,12 @@ export class ValueDeserializer {
       if (!isResizableArrayBuffer(buffer)) {
         return false;
       }
-      if (isBBRab && buffer instanceof globalThis.SharedArrayBuffer) {
+      if (isBBRab && buffer instanceof (globalThis.SharedArrayBuffer ?? Never)) {
         return false;
       }
     }
     // The RAB-ness of the buffer and the TA's "is_backed_by_rab" need to be in sync.
-    if (isResizableArrayBuffer(buffer) && !(buffer instanceof globalThis.SharedArrayBuffer) && !isBBRab) {
+    if (isResizableArrayBuffer(buffer) && !(buffer instanceof (globalThis.SharedArrayBuffer ?? Never)) && !isBBRab) {
       return false;
     }
     return true;
