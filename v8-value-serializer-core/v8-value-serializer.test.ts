@@ -45,6 +45,8 @@ const testCases = [
   2n ** 128n - 1n,
   2n ** 128n,
   2n ** 1024n,
+  -1n,
+  BigInt(Number.MIN_SAFE_INTEGER),
   Object(1n), // bigint primitive wrapper,
   new String("s"),
   new Boolean(true),
