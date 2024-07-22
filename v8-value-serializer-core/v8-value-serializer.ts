@@ -200,7 +200,7 @@ function isGrowableSharedArrayBuffer(buffer: SharedArrayBuffer) {
 const SM_MIN = -(2 ** 30);  // -2^30
 const SM_MAX = 2 ** 30 - 1; // 2^30 - 1
 
-const FixedArrayMaxLength = 2^30 - 1
+const FixedArrayMaxLength = 2 ** 30 - 1
 
 function isSmi(value: number): value is number {
   return value >= SM_MIN && value <= SM_MAX;
