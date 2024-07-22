@@ -1,6 +1,5 @@
 import { Deserializer, DeserializerOptions, Serializer, SerializerOptions } from "./serdes.ts";
 
-export type { ValueDeserializerDelegate, ValueSerializerDelegate } from "./serdes.ts";
 export type { DeserializerOptions, SerializerOptions };
 export { Deserializer, Serializer };
 

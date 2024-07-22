@@ -6,8 +6,6 @@ import {
   ValueSerializerDelegate
 } from "jsr:@workers/v8-value-serializer-core@^0.1.5";
 
-export type { ValueDeserializerDelegate, ValueSerializerDelegate };
-
 function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceStart: number, sourceEnd: number) {
   dest.set(source.subarray(sourceStart, sourceEnd), destStart);
 }
