@@ -1,5 +1,6 @@
 import { Deserializer, DeserializerOptions, Serializer, SerializerOptions } from "./serdes.ts";
 
+export type { ValueDeserializerDelegate, ValueSerializerDelegate } from "./serdes.ts";
 export type { DeserializerOptions, SerializerOptions };
 
 /** Serialize a JavaScript object according to the Structured Clone Algorithm */

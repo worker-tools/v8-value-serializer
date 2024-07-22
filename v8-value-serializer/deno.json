@@ -1,5 +1,5 @@
 {
   "name": "@workers/v8-value-serializer",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "exports": "./index.ts"
 }

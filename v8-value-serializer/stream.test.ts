@@ -1,6 +1,7 @@
 import { assertEquals } from "jsr:@std/assert";
 import { DeserializerStream, SerializerStream } from "./stream.ts";
-import { encodeHex } from "jsr:@std/encoding";
+import { Deserializer, Serializer } from "./serdes.ts";
+import { SerializationTag } from "jsr:@workers/v8-value-serializer-core@^0.1.5";
 
 Deno.test("basic stream support", async () => {
   const stream = ReadableStream.from((async function* () {
@@ -71,3 +72,39 @@ Deno.test("empty values", async () => {
   );
   assertEquals(actual, expected);
 })
+
+Deno.test("custom serializer/deserializer implementation", async () => {
+  class Port { constructor(public value: any) {} }
+  const expected = [new Port({ a: 1 }), new Port({ a: 2 }), new Port({ a: 3 })];
+  const stream = ReadableStream.from(expected);
+  const actual = await Array.fromAsync(stream
+    .pipeThrough(new SerializerStream({
+      serializer: class extends Serializer {
+        get hasCustomHostObjects(): boolean { return true }
+        isHostObject(object: unknown): boolean {
+          return object instanceof Port;
+        }
+        writeHostObject(object: object): boolean {
+          if (object instanceof Port) {
+            this.serializer.writeUint32(SerializationTag.kLegacyReservedMessagePort);
+            this.serializer.writeObject(object.value);
+            return true;
+          }
+          return super.writeHostObject(object as ArrayBufferView);
+        }
+      },
+    }))
+    .pipeThrough(new DeserializerStream({
+      deserializer: class extends Deserializer {
+        readHostObjectForTag(tag: number): object | null {
+          if (tag === SerializationTag.kLegacyReservedMessagePort) {
+            const value = this.deserializer.readObjectWrapper();
+            return value && new Port(value);
+          }
+          return super.readHostObjectForTag(tag);
+        }
+      },
+    }))
+  );
+  assertEquals(actual, expected);
+});

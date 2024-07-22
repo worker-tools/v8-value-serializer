@@ -6,11 +6,13 @@ import {
   ValueSerializerDelegate
 } from "jsr:@workers/v8-value-serializer-core@^0.1.5";
 
+export type { ValueDeserializerDelegate, ValueSerializerDelegate };
+
 function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceStart: number, sourceEnd: number) {
   dest.set(source.subarray(sourceStart, sourceEnd), destStart);
 }
 
-function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
+function arrayBufferViewTypeToIndex(abView: object): number {
   if (abView instanceof Int8Array) return 0;
   if (abView instanceof Uint8Array) return 1;
   if (abView instanceof Uint8ClampedArray) return 2;
@@ -128,7 +130,7 @@ export class Serializer implements ValueSerializerDelegate {
     return new ArrayBuffer(size);
   }
 
-  writeHostObject(abView: ArrayBufferView): boolean {
+  writeHostObject(object: object): boolean {
     // Keep track of how to handle different ArrayBufferViews. The default
     // Serializer for Node does not use the V8 methods for serializing those
     // objects because Node's `Buffer` objects use pooled allocation in many
@@ -137,12 +139,13 @@ export class Serializer implements ValueSerializerDelegate {
     // may not be aware of that and b) they are often much larger than the
     // `Buffer` itself, custom serialization is applied.
     let i = 1;  // Uint8Array
-    if (!(abView instanceof Uint8Array)) {
-      i = arrayBufferViewTypeToIndex(abView);
+    if (!(object instanceof Uint8Array)) {
+      i = arrayBufferViewTypeToIndex(object);
       if (i === -1) {
-        this.throwDataCloneError(`Unserializable host object: ${abView}`);
+        this.throwDataCloneError(`Unserializable host object: ${object}`);
       }
     }
+    const abView = object as ArrayBufferView;
     this.serializer.writeUint32(i);
     this.serializer.writeUint32(abView.byteLength);
     this.serializer.writeRawBuffer(abView.buffer, abView.byteOffset, abView.byteLength);
@@ -151,7 +154,7 @@ export class Serializer implements ValueSerializerDelegate {
 
   get hasCustomHostObjects() { return false };
 
-  isHostObject(_object: unknown): boolean {
+  isHostObject(object: unknown): boolean {
     // Shouldn't be necessary due to `hasCustomHostObjects`
     return false
   };
@@ -184,9 +187,14 @@ export class Deserializer implements ValueDeserializerDelegate {
     this.readHeader();
   }
 
-  readHostObject() {
-    const typeIndex = this.deserializer.readUint32();
-    const Ctor = arrayBufferViewIndexToType(typeIndex);
+  readHostObject(): object|null {
+    const tag = this.deserializer.readUint32();
+    if (tag === null) return null;
+    return this.readHostObjectForTag(tag);
+  }
+
+  protected readHostObjectForTag(tag: number): object|null {
+    const Ctor = arrayBufferViewIndexToType(tag);
     if (!Ctor) return null;
     const byteLength = this.deserializer.readUint32();
     if (!byteLength) return null;
@@ -210,21 +218,6 @@ export class Deserializer implements ValueDeserializerDelegate {
 
   readValue(): any {
     return this.deserializer.readObjectWrapper();
-  }
-
-  readMany(): { values: any[], lastPosition: number|null } {
-    const values = []
-    let lastPosition: number|null = null;
-    do {
-      (this.deserializer as any).suppressDeserializationErrors = true;
-      const result = (this.deserializer as any).readObject();
-      if (result !== null) {
-        values.push(result.value); // FIXME: null symbol replace
-      } else {
-        lastPosition = result.reason.lastPosition;
-      }
-    } while (lastPosition == null);
-    return { values, lastPosition };
   }
 
   transferArrayBuffer(id: number, arrayBuffer: ArrayBuffer): void {

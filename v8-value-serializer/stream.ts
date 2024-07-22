@@ -1,16 +1,29 @@
 import { Serializer, SerializerOptions, Deserializer, DeserializerOptions } from "./serdes.ts";
 
+/** Customize behavior of the serializer stream */
+export interface SerializerStreamOptions extends SerializerOptions {
+  /** Provide a custom {@link Serializer} class */
+  serializer?: typeof Serializer
+}
+
+/** Customize behavior of the deserializer stream */
+export interface DeserializerStreamOptions extends DeserializerOptions {
+  /** Provide a custom {@link Deserializer} class */
+  deserializer?: typeof Deserializer
+}
+
 /**
  * A transform stream meant to serialize a multiple JS values over time. 
+ * 
  * Each value is double encoded to aid deserialization. This ensures that the byte length is prepended, 
  * s.t. the deserializer doesn't have to do unnecessary work until enough bytes are buffered, without inventing any new message format.
  * Values need to piped through the {@link DeserializerStream} to be deserialized.
  */
 export class SerializerStream extends TransformStream<any, Uint8Array> {
-  constructor(options?: SerializerOptions) {
+  constructor(options?: SerializerStreamOptions) {
     super({
       transform(value, controller) {
-        const body = new Serializer(options).serialize(value);
+        const body = new (options?.serializer ?? Serializer)(options).serialize(value);
         const chunk = new Serializer().serialize(body);
         controller.enqueue(chunk);
       },
@@ -19,11 +32,12 @@ export class SerializerStream extends TransformStream<any, Uint8Array> {
 }
 
 /**
- * Meant to deserialize values encoded with the serializer stream. 
+ * A transform stream meant to deserialize values encoded with the serializer stream. 
+ * 
  * It can only be used together with {@link SerializerStream} because it expects a double-encoded format described there.
  */
 export class DeserializerStream extends TransformStream<Uint8Array, any> {
-  constructor(options?: DeserializerOptions) {
+  constructor(options?: DeserializerStreamOptions) {
     let incompleteBuffer: Uint8Array|null = null;
     super({
       transform(chunk, controller) {
@@ -43,7 +57,7 @@ export class DeserializerStream extends TransformStream<Uint8Array, any> {
           const body = (deserializer as any).deserializer.readObject();
 
           if (body !== null) {
-            const value = new Deserializer(body, options).deserialize();
+            const value = new (options?.deserializer ?? Deserializer)(body, options).deserialize();
             controller.enqueue(value);
             chunk = chunk.subarray((deserializer as any).deserializer.position);
           } else {
