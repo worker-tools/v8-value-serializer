@@ -111,7 +111,7 @@ export class Serializer implements ValueSerializerDelegate {
     return true;
   }
 
-  releaseBuffer() {
+  releaseBuffer(): Uint8Array {
     return this.data!;
   }
 
@@ -152,7 +152,7 @@ export class Serializer implements ValueSerializerDelegate {
     return true
   }
 
-  get hasCustomHostObjects() { return false };
+  get hasCustomHostObjects(): boolean { return false };
 
   isHostObject(object: unknown): boolean {
     // Shouldn't be necessary due to `hasCustomHostObjects`
