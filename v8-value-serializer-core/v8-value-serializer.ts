@@ -572,7 +572,7 @@ export class ValueSerializer {
     }
 
     // Ensure the array buffer is not shared (assuming we have a way to check this in JS)
-    if (arrayBuffer instanceof SharedArrayBuffer) {
+    if (arrayBuffer instanceof globalThis.SharedArrayBuffer) {
       throw new Error('SharedArrayBuffer cannot be transferred');
     }
 
@@ -764,7 +764,7 @@ export class ValueSerializer {
     if (receiver instanceof Set) {
       return this.writeJSSet(receiver);
     } 
-    if (receiver instanceof ArrayBuffer || receiver instanceof SharedArrayBuffer) {
+    if (receiver instanceof ArrayBuffer || receiver instanceof globalThis.SharedArrayBuffer) {
       return this.writeJSArrayBuffer(receiver);
     } 
     if (isTypedArray(receiver) || receiver instanceof DataView) {
@@ -951,7 +951,7 @@ export class ValueSerializer {
   }
 
   private writeJSArrayBuffer(arrayBuffer: ArrayBuffer | SharedArrayBuffer): boolean {
-    if (arrayBuffer instanceof SharedArrayBuffer) {
+    if (arrayBuffer instanceof globalThis.SharedArrayBuffer) {
       if (!this.delegate) {
         return this.throwDataCloneError(arrayBuffer);
       }
@@ -1008,15 +1008,15 @@ export class ValueSerializer {
       return ArrayBufferViewTag.kInt32Array;
     } else if (view instanceof Uint32Array) {
       return ArrayBufferViewTag.kUint32Array;
-    } else if ('Float16Array' in globalThis && view instanceof globalThis.Float16Array) {
+    } else if (view instanceof globalThis.Float16Array) {
       return ArrayBufferViewTag.kFloat16Array;
     } else if (view instanceof Float32Array) {
       return ArrayBufferViewTag.kFloat32Array;
     } else if (view instanceof Float64Array) {
       return ArrayBufferViewTag.kFloat64Array;
-    } else if (view instanceof BigInt64Array) {
+    } else if (view instanceof globalThis.BigInt64Array) {
       return ArrayBufferViewTag.kBigInt64Array;
-    } else if (view instanceof BigUint64Array) {
+    } else if (view instanceof globalThis.BigUint64Array) {
       return ArrayBufferViewTag.kBigUint64Array;
     } else {
       this.throwDataCloneError(view);
@@ -1982,19 +1982,21 @@ export class ValueDeserializer {
       case ArrayBufferViewTag.kUint32Array:
         return Uint32Array;
       case ArrayBufferViewTag.kFloat16Array:
-        if ('Float16Array' in globalThis) {
-          return globalThis.Float16Array;
-        } else {
-          throw new Error('Float16Array is not supported in this environment.');
-        }
+        return 'Float16Array' in globalThis 
+          ? globalThis.Float16Array 
+          : (() => { throw new Error('Float16Array is not supported in this environment') })();
       case ArrayBufferViewTag.kFloat32Array:
         return Float32Array;
       case ArrayBufferViewTag.kFloat64Array:
         return Float64Array;
       case ArrayBufferViewTag.kBigInt64Array:
-        return BigInt64Array;
+        return 'BigInt64Array' in globalThis 
+          ? globalThis.BigInt64Array 
+          : (() => { throw new Error('BigInt64Array is not supported in this environment') })();
       case ArrayBufferViewTag.kBigUint64Array:
-        return BigUint64Array;
+        return 'BigUint64Array' in globalThis 
+          ? globalThis.BigUint64Array 
+          : (() => { throw new Error('BigUint64Array is not supported in this environment') })()
       default:
         throw new Error('Unknown ArrayBufferViewTag');
     }
@@ -2013,12 +2015,12 @@ export class ValueDeserializer {
       if (!isResizableArrayBuffer(buffer)) {
         return false;
       }
-      if (isBBRab && buffer instanceof SharedArrayBuffer) {
+      if (isBBRab && buffer instanceof globalThis.SharedArrayBuffer) {
         return false;
       }
     }
     // The RAB-ness of the buffer and the TA's "is_backed_by_rab" need to be in sync.
-    if (isResizableArrayBuffer(buffer) && !(buffer instanceof SharedArrayBuffer) && !isBBRab) {
+    if (isResizableArrayBuffer(buffer) && !(buffer instanceof globalThis.SharedArrayBuffer) && !isBBRab) {
       return false;
     }
     return true;

@@ -1,7 +1,7 @@
 import { assertEquals } from "jsr:@std/assert";
 import { DeserializerStream, SerializerStream } from "./stream.ts";
 import { Deserializer, Serializer } from "./serdes.ts";
-import { SerializationTag } from "jsr:@workers/v8-value-serializer-core@^0.1.5";
+import { SerializationTag } from "jsr:@workers/v8-value-serializer-core@^0.1.6";
 
 Deno.test("basic stream support", async () => {
   const stream = ReadableStream.from((async function* () {

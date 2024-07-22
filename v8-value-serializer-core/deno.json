@@ -1,6 +1,6 @@
 {
   "name": "@workers/v8-value-serializer-core",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "exports": "./v8-value-serializer.ts",
   "publish": {
     "exclude": [
