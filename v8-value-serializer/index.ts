@@ -1,4 +1,4 @@
-import { Deserializer, DeserializerOptions, Serializer, SerializerOptions } from "./serdes.ts";
+import { Deserializer, type DeserializerOptions, Serializer, type SerializerOptions } from "./serdes.ts";
 
 export type { DeserializerOptions, SerializerOptions };
 export { Deserializer, Serializer };
