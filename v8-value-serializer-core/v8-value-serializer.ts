@@ -1582,8 +1582,8 @@ export class ValueDeserializer {
   private _tdUtf16?: TextDecoder;
   private _tdLatin1?: TextDecoder;
   private get tdUtf8() { return this._tdUtf8 ??= new TextDecoder('utf-8') }
-  private get tdUtf16() { return this._tdUtf16 ??= new TextDecoder('utf-16le', { fatal: false }) }
-  private get tdLatin1() { return this._tdLatin1 ??= new TextDecoder('latin1') }
+  private get tdUtf16() { return this._tdUtf16 ??= (() => { try { return new TextDecoder('utf-16le', { fatal: false }) } catch {} })(); }
+  private get tdLatin1() { return this._tdLatin1 ??= (() => { try { return new TextDecoder('latin1') } catch {} })(); }
 
   private readUtf8String(): string | null {
     const utf8Length = this.readVarInt();
@@ -1602,19 +1602,14 @@ export class ValueDeserializer {
     const bytes = this.readRawBytes(byteLength);
     if (bytes === null) return null;
 
-    // // Fast path for Node.js
-    // if (this.GlobalBuffer) {
-    //   return this.GlobalBuffer.from(bytes.buffer, bytes.byteOffset, bytes.length).toString('latin1');
-    // }
-
-    return this.tdLatin1.decode(bytes);
+    return this.tdLatin1?.decode(bytes) ?? stringFromCharCode(bytes);
   }
 
   private readTwoByteString(): string | null {
     const byteLength = this.readVarInt();
     if (byteLength === null) return null;
 
-    if (this.forceUtf16) {
+    if (this.forceUtf16 && this.tdUtf16) {
       const bytes = this.readRawBytes(byteLength);
       if (bytes === null) return null;
 

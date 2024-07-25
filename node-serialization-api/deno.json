@@ -1,5 +1,5 @@
 {
   "name": "@workers/node-serialization-api",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "exports": "./v8.ts"
 }
