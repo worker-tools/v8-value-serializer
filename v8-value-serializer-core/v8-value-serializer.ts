@@ -1,6 +1,6 @@
 export const kLatestVersion = 15;
 
-export enum SerializationTag {
+export const enum SerializationTag {
   // version:uint32_t (if at beginning of data, sets version > 0)
   kVersion = 0xFF,
   // ignore
@@ -128,7 +128,7 @@ export enum SerializationTag {
   kLegacyReservedRTCCertificate = 107, // 'k'
 }
 
-export enum ArrayBufferViewTag {
+export const enum ArrayBufferViewTag {
   kInt8Array = 98, // 'b'
   kUint8Array = 66, // 'B'
   kUint8ClampedArray = 67, // 'C'
@@ -145,7 +145,7 @@ export enum ArrayBufferViewTag {
 }
 
 // Sub-tags only meaningful for error serialization.
-export enum ErrorTag {
+export const enum ErrorTag {
   // The error is a EvalError. No accompanying data.
   kEvalErrorPrototype = 69, // 'E'
   // The error is a RangeError. No accompanying data.
