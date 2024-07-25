@@ -1,7 +1,7 @@
 import { serialize, deserialize } from "./index.ts";
 import { assertEquals } from "jsr:@std/assert";
 import { Deserializer, Serializer } from "./serdes.ts";
-import { SerializationTag } from "jsr:@workers/v8-value-serializer-core@^0.1.12";
+import { SerializationTag } from "@workers/v8-value-serializer-core";
 
 Deno.test("serialize and deserialize ArrayBuffer", () => {
   const o = new ArrayBuffer(8);

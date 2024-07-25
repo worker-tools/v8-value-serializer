@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { ValueSerializer, type ValueSerializerDelegate, ValueDeserializer, type ValueDeserializerDelegate } from "jsr:@workers/v8-value-serializer-core@^0.1.12";
+import { ValueSerializer, type ValueSerializerDelegate, ValueDeserializer, type ValueDeserializerDelegate } from "@workers/v8-value-serializer-core";
 
 // This file has no direct C++ equivalent, it's a mishmash of the following files, 
 // with the goal of making node's v8 module (v8.js) work without modification.

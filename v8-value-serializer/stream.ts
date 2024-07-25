@@ -1,4 +1,4 @@
-import { Serializer, SerializerOptions, Deserializer, DeserializerOptions } from "./serdes.ts";
+import { Serializer, type SerializerOptions, Deserializer, type DeserializerOptions } from "./serdes.ts";
 
 /** Customize behavior of the serializer stream */
 export interface SerializerStreamOptions extends SerializerOptions {
