@@ -669,6 +669,14 @@ export class ValueSerializer {
   private te = new TextEncoder();
   private forceUtf8 = false;
 
+  private encodeInto: (chunk: string, dest: Uint8Array) => { read: number, written: number } = 'encodeInto' in TextEncoder.prototype
+  ? (chunk, dest) => this.te.encodeInto(chunk, dest)
+  : (chunk, dest) => {
+    const encoded = (this.te as TextEncoder).encode(chunk);
+    dest.set(encoded);
+    return { read: chunk.length, written: encoded.length };
+  }
+
   private writeString(str: string): boolean {
     // Older versions of the protocol supported UTF-8 strings. It was likely removed because it breaks certain WTF-16 strings,
     // or because it's faster for V8 to dump its internal string representation. 
@@ -702,7 +710,7 @@ export class ValueSerializer {
       const currentChunk = str.substring(offset, offset + currentChunkSize);
   
       const dest = this.reserveRawBytes(currentChunk.length);
-      const { read, written } = this.te.encodeInto(currentChunk, dest);
+      const { read, written } = this.encodeInto(currentChunk, dest);
       if (written !== currentChunk.length || read !== written) {
         // It wasn't ASCII, bailing out.
         // Note that this also bails on latin-1 strings, which would still be encoded as one-byte in V8, but whatever.
