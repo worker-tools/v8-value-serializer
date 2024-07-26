@@ -197,6 +197,9 @@ function isGrowableSharedArrayBuffer(buffer: SharedArrayBuffer) {
   return 'growable' in buffer && buffer.growable
 }
 
+const SizeOfUint32 = 4;
+const SizeOfBigUint64 = 8;
+
 const SM_MIN = -(2 ** 30);  // -2^30
 const SM_MAX = 2 ** 30 - 1; // 2^30 - 1
 
@@ -266,19 +269,6 @@ function bigIntFromSerializedDigits(digitsStorage: Uint8Array, sign: boolean): b
     return -bigint;
   }
   return bigint;
-}
-
-function clz64(n: bigint) {
-  if (n <= 0n) {
-      return 64; // For non-positive values, return 64 as the maximum number of leading zeros
-  }
-  let count = 0n;
-  let bitMask = 1n << 63n; // Start with the highest bit in a 64-bit number
-  while ((n & bitMask) === 0n) {
-      count++;
-      bitMask >>= 1n;
-  }
-  return Number(count);
 }
 
 function encodeWTF16Into(string: string, dest: Uint16Array) {
@@ -433,9 +423,7 @@ export class ValueSerializer {
     // The number is written, 7 bits at a time, from the least significant to the
     // most significant 7 bits. Each byte, except the last, has the MSB set.
     // See also https://developers.google.com/protocol-buffers/docs/encoding
-
-    // const length = value && Math.ceil(Math.log2(value) / 7) + 1
-    const length = ((32 - Math.clz32(value) + 6) / 7) | 0;
+    const length = (SizeOfUint32 * 8 / 7 + 1)|0;
 
     this.ensureCapacity(length);
 
@@ -451,8 +439,7 @@ export class ValueSerializer {
   }
 
   private writeVarInt64(value: bigint): void {
-    // same as above, but using bigint math
-    const length = ((32 - clz64(value) + 6) / 7) | 0;
+    const length = (SizeOfBigUint64 * 8 / 7 + 1)|0;
 
     this.ensureCapacity(length);
 
