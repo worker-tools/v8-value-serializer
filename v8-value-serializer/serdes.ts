@@ -1,8 +1,8 @@
-import { 
-  ArrayBufferViewTag, 
-  ValueDeserializer, 
-  type ValueDeserializerDelegate, 
-  ValueSerializer, 
+import {
+  ArrayBufferViewTag,
+  ValueDeserializer,
+  type ValueDeserializerDelegate,
+  ValueSerializer,
   type ValueSerializerDelegate
 } from "@workers/v8-value-serializer-core";
 
@@ -175,10 +175,10 @@ export class Deserializer implements ValueDeserializerDelegate {
   protected buffer: Uint8Array;
 
   constructor(buffer: BufferSource, options?: DeserializerOptions) {
-    const data = this.buffer = buffer instanceof Uint8Array 
+    const data = this.buffer = buffer instanceof Uint8Array
       ? buffer
-      : buffer instanceof ArrayBuffer 
-        ? new Uint8Array(buffer) 
+      : buffer instanceof ArrayBuffer
+        ? new Uint8Array(buffer)
         : new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     this.deserializer = new ValueDeserializer(data, this);
     this.deserializer.setForceUtf16(options?.forceUtf16 ?? false);

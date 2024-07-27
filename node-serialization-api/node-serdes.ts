@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { ValueSerializer, type ValueSerializerDelegate, ValueDeserializer, type ValueDeserializerDelegate } from "@workers/v8-value-serializer-core";
 
-// This file has no direct C++ equivalent, it's a mishmash of the following files, 
+// This file has no direct C++ equivalent, it's a mishmash of the following files,
 // with the goal of making node's v8 module (v8.js) work without modification.
 // - https://github.com/nodejs/node/blob/main/src/node_serdes.cc
 // - https://github.com/nodejs/node/blob/main/deps/v8/src/d8/d8.cc
@@ -136,10 +136,10 @@ export abstract class Serializer implements ISerializer, ValueSerializerDelegate
   }
 
   writeRawBytes_(buffer: BufferSource) {
-    const bytes = buffer instanceof Uint8Array 
-      ? buffer 
-      : 'buffer' in buffer 
-        ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) 
+    const bytes = buffer instanceof Uint8Array
+      ? buffer
+      : 'buffer' in buffer
+        ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
         : new Uint8Array(buffer);
     this.serializer.writeRawBytes(bytes);
   }
@@ -190,8 +190,8 @@ export abstract class Deserializer implements IDeserializer, ValueDeserializerDe
   // private sharedArrayBuffers: SharedArrayBuffer[];
 
   constructor(buffer: Buffer | ArrayBufferView | DataView) {
-    const data = this.data = buffer instanceof ArrayBuffer 
-      ? new Uint8Array(buffer) 
+    const data = this.data = buffer instanceof ArrayBuffer
+      ? new Uint8Array(buffer)
       : new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     this.deserializer = new ValueDeserializer(data, this);
     // this.arrayBuffers = [];

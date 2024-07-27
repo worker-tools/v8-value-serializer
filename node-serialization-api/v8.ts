@@ -154,7 +154,7 @@ function deserialize(buffer: Buffer | ArrayBufferView | DataView): any {
   return der.readValue();
 }
 
-export { 
+export {
   Serializer,
   Deserializer,
   DefaultSerializer,

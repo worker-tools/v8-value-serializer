@@ -13,9 +13,9 @@ export interface DeserializerStreamOptions extends DeserializerOptions {
 }
 
 /**
- * A transform stream meant to serialize a multiple JS values over time. 
- * 
- * Each value is double encoded to aid deserialization. This ensures that the byte length is prepended, 
+ * A transform stream meant to serialize a multiple JS values over time.
+ *
+ * Each value is double encoded to aid deserialization. This ensures that the byte length is prepended,
  * s.t. the deserializer doesn't have to do unnecessary work until enough bytes are buffered, without inventing any new message format.
  * Values need to piped through the {@link DeserializerStream} to be deserialized.
  */
@@ -32,8 +32,8 @@ export class SerializerStream extends TransformStream<any, Uint8Array> {
 }
 
 /**
- * A transform stream meant to deserialize values encoded with the serializer stream. 
- * 
+ * A transform stream meant to deserialize values encoded with the serializer stream.
+ *
  * It can only be used together with {@link SerializerStream} because it expects a double-encoded format described there.
  */
 export class DeserializerStream extends TransformStream<Uint8Array, any> {

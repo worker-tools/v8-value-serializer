@@ -177,6 +177,7 @@ type TypedArrayConstructor =
   | Uint16ArrayConstructor
   | Int32ArrayConstructor
   | Uint32ArrayConstructor
+  // @ts-ignore
   | typeof globalThis.Float16Array
   | Float32ArrayConstructor
   | Float64ArrayConstructor
@@ -189,11 +190,11 @@ function isTypedArray(value: unknown): value is ArrayBufferView {
   return value instanceof TypedArray;
 }
 
-function isResizableArrayBuffer(buffer: ArrayBuffer) {
+function isResizableArrayBuffer(buffer: ArrayBufferLike) {
   return 'resizable' in buffer && buffer.resizable
 }
 
-function isGrowableSharedArrayBuffer(buffer: SharedArrayBuffer) {
+function isGrowableSharedArrayBuffer(buffer: ArrayBufferLike) {
   return 'growable' in buffer && buffer.growable
 }
 
@@ -385,7 +386,7 @@ export class ValueSerializer {
     this.bytes = new Uint8Array(this.buffer);
     this.hasCustomHostObjects = this.delegate?.hasCustomHostObjects ?? false;
   }
-  
+
   private _view?: DataView;
   private get view() {
     return this._view ??= new DataView(this.buffer);
@@ -560,8 +561,8 @@ export class ValueSerializer {
   // XXX: Maybe just prevent further writes instead of resetting?
   release(): Uint8Array {
     const bytes = this.bytes.subarray(0, this.size);
-    this.bytes = new Uint8Array(0);
-    this.buffer = this.bytes.buffer;
+    this.buffer = new ArrayBuffer(0);
+    this.bytes = new Uint8Array(this.buffer);
     this._view = undefined; // invalidate the view
     this.size = 0;
     this.bufferCapacity = 0;
@@ -625,7 +626,7 @@ export class ValueSerializer {
 
   private writeOddball(oddball: boolean|null|undefined): void {
     let tag: SerializationTag;
-    if (oddball === undefined) 
+    if (oddball === undefined)
       tag = SerializationTag.kUndefined;
     else if (oddball === false)
       tag = SerializationTag.kFalse;
@@ -637,17 +638,17 @@ export class ValueSerializer {
       throw new Error('Unreachable code');
     this.writeTag(tag);
   }
-  
+
   private writeSmi(smi: number): void {
     this.writeTag(SerializationTag.kInt32);
     this.writeZigZag(smi);
   }
-  
+
   private writeHeapNumber(number: number): void {
     this.writeTag(SerializationTag.kDouble);
     this.writeDouble(number);
   }
-  
+
   private writeBigInt(bigint: bigint): void {
     this.writeTag(SerializationTag.kBigInt);
     this.writeBigIntContents(bigint);
@@ -666,7 +667,7 @@ export class ValueSerializer {
 
   private writeString(str: string): boolean {
     // Older versions of the protocol supported UTF-8 strings. It was likely removed because it breaks certain WTF-16 strings,
-    // or because it's faster for V8 to dump its internal string representation. 
+    // or because it's faster for V8 to dump its internal string representation.
     // However, it's still being decoded and for JS userland it's performance improvement if we don't care about edge cases, since
     // TextEncoder appears to be faster than constant charCodeAt...
     if (this.forceUtf8) {
@@ -690,12 +691,12 @@ export class ValueSerializer {
 
     this.writeTag(SerializationTag.kOneByteString);
     this.writeVarInt(str.length);
-  
+
     let bailed = false;
     while (offset < str.length) {
       const currentChunkSize = Math.min(chunkSize, str.length - offset);
       const currentChunk = str.substring(offset, offset + currentChunkSize);
-  
+
       const dest = this.reserveRawBytes(currentChunk.length);
       const { read, written } = this.encodeInto(currentChunk, dest);
       if (written !== currentChunk.length || read !== written) {
@@ -704,7 +705,7 @@ export class ValueSerializer {
         bailed = true;
         break;
       }
-  
+
       offset += currentChunkSize;
       chunkSize *= 2; // We try increasingly large chunks, on the assumption that probability decreases each time.
     }
@@ -725,7 +726,7 @@ export class ValueSerializer {
     encodeWTF16Into(str, dest);
     return true;
   }
-  
+
     private writeJSReceiver(receiver: object): boolean {
     // If the object has already been serialized, just write its ID.
     const foundId = this.idMap.get(receiver);
@@ -734,7 +735,7 @@ export class ValueSerializer {
       this.writeVarInt(foundId - 1);
       return true;
     }
-  
+
     // Otherwise, allocate an ID for it.
     const id = this.nextId++;
     this.idMap.set(receiver, id + 1);
@@ -744,7 +745,7 @@ export class ValueSerializer {
     //                                   instanceType !== InstanceType.JS_SPECIAL_API_OBJECT_TYPE)) {
     // HACK: Simplified condition, not sure if correct (UPDATE: It is not)
     if (
-      typeof receiver === 'function' || 
+      typeof receiver === 'function' ||
       receiver instanceof Promise ||
       receiver instanceof WeakMap ||
       receiver instanceof WeakSet ||
@@ -752,7 +753,7 @@ export class ValueSerializer {
     ) {
       return this.throwDataCloneError(receiver);
     }
-  
+
     if (Array.isArray(receiver)) {
       return this.writeJSArray(receiver);
     }
@@ -766,26 +767,26 @@ export class ValueSerializer {
     }
     if (receiver instanceof Boolean || receiver instanceof String || receiver instanceof Number || receiver instanceof BigInt || receiver instanceof Symbol) {
       return this.writeJSPrimitiveWrapper(receiver);
-    } 
+    }
     if (receiver instanceof RegExp) {
       this.writeJSRegExp(receiver);
       return true;
     }
     if (receiver instanceof Map) {
       return this.writeJSMap(receiver);
-    } 
+    }
     if (receiver instanceof Set) {
       return this.writeJSSet(receiver);
-    } 
+    }
     if (receiver instanceof ArrayBuffer || receiver instanceof (globalThis.SharedArrayBuffer ?? Never)) {
       return this.writeJSArrayBuffer(receiver);
-    } 
+    }
     if (isTypedArray(receiver) || receiver instanceof DataView) {
       return this.writeJSArrayBufferView(receiver);
-    } 
+    }
     if (receiver instanceof Error) {
       return this.writeJSError(receiver);
-    } 
+    }
     if (typeof receiver === 'object') {
       const jsObject = receiver;
       const isHostObject = this.isHostObject(jsObject);
@@ -813,13 +814,13 @@ export class ValueSerializer {
     //   return WriteWasmModule(Cast<WasmModuleObject>(receiver));
     // case WASM_MEMORY_OBJECT_TYPE:
     //   return WriteWasmMemory(Cast<WasmMemoryObject>(receiver));
-  
+
     return this.throwDataCloneError(receiver);
   }
 
   private writeJSObject(object: object) {
     this.writeTag(SerializationTag.kBeginJSObject);
-    
+
     const propertiesWritten = this.writeJSObjectProperties(object);
 
     this.writeTag(SerializationTag.kEndJSObject);
@@ -894,7 +895,7 @@ export class ValueSerializer {
       let propertiesWritten = 0;
       // XXX: If the array has more keys than `length`, there must be additional properties
       // This is terrible for perf, but afaik there's no better way to check if the array has additional properties.
-      // I'm wondering if it would be better to just always use the "slow" path. 
+      // I'm wondering if it would be better to just always use the "slow" path.
       if (!this.ignoreArrayProperties) {
         const keys = Object.keys(array);
         if (keys.length !== array.length) {
@@ -910,9 +911,9 @@ export class ValueSerializer {
 
       this.writeTag(SerializationTag.kBeginSparseJSArray);
       this.writeVarInt(length);
-      
+
       const propertiesWritten = this.writeJSObjectProperties(array);
-      
+
       this.writeTag(SerializationTag.kEndSparseJSArray);
       this.writeVarInt(propertiesWritten);
       this.writeVarInt(length);
@@ -930,7 +931,7 @@ export class ValueSerializer {
     this.writeString(regexp.source);
     this.writeVarInt(getRegExpFlags(regexp));
   }
-  
+
   private writeJSMap(jsMap: Map<any, any>): boolean {
     // First copy the key-value pairs, since getters could mutate them.
     const entries = [...jsMap.entries()]
@@ -1021,6 +1022,7 @@ export class ValueSerializer {
       return ArrayBufferViewTag.kInt32Array;
     } else if (view instanceof Uint32Array) {
       return ArrayBufferViewTag.kUint32Array;
+    // @ts-ignore
     } else if (view instanceof (globalThis.Float16Array ?? Never)) {
       return ArrayBufferViewTag.kFloat16Array;
     } else if (view instanceof Float32Array) {
@@ -1044,9 +1046,9 @@ export class ValueSerializer {
 
     let tag: ArrayBufferViewTag|undefined;
     if (isTypedArray(view)) {
-      // NOTE: Here we are supposed to check for out of bounds, but AFAIK we can't replicate this check in userland. 
-      // A view that has gone out of bounds is set to length 0 and is indistinguishable from an empty view. 
-      // Since we can't throw on empty views, we just include it. 
+      // NOTE: Here we are supposed to check for out of bounds, but AFAIK we can't replicate this check in userland.
+      // A view that has gone out of bounds is set to length 0 and is indistinguishable from an empty view.
+      // Since we can't throw on empty views, we just include it.
       // We could work around this by doing something silly like `structuredClone(view)` just to bait the exception, but no thanks.
       // if (view.isOutOfBounds()) { return this.throwDataCloneError(MessageTemplate.kDataCloneError, view); }
       tag = this.getArrayBufferViewTag(view)
@@ -1059,7 +1061,7 @@ export class ValueSerializer {
     this.writeVarInt(tag);
     this.writeVarInt(view.byteOffset);
     this.writeVarInt(view.byteLength);
-    const flags = 
+    const flags =
       0 | // (isLengthTracking(view.buffer) ? 1 : 0) | // XXX: Can we know this in JS?
       (isResizableArrayBuffer(view.buffer) ? 2 : 0);
     this.writeVarInt(flags);
@@ -1201,7 +1203,7 @@ export class ValueSerializer {
 
     return propertiesWritten;
   }
-  
+
   private isHostObject(jsObject: any): boolean|null {
     let result: boolean|null;
     try {
@@ -1227,7 +1229,7 @@ export class ValueSerializer {
   }
 }
 
-// Since null is taken to mean failure in the code below, need to replace this symbol with actual null before external usage. 
+// Since null is taken to mean failure in the code below, need to replace this symbol with actual null before external usage.
 // This isn't ideal, as one must remember to replace it everywhere, but it works and unlikely to change anyway.
 // Could be replace by a "Result" type, or throwing exceptions.
 const sNull = Symbol('null');
@@ -1407,7 +1409,7 @@ export class ValueDeserializer {
   readByte(): number {
     return this.data[this.position++];
   }
-  
+
   readUint32(): number | null {
     return this.readVarInt();
   }
@@ -1544,12 +1546,12 @@ export class ValueDeserializer {
 
   private readString(): string | null {
     if (this.wireFormatVersion < 12) return this.readUtf8String();
-    
+
     const object = this.readObject();
     if (object === null || typeof object !== "string") {
       return null;
     }
-    
+
     return object;
   }
 
@@ -1849,7 +1851,7 @@ export class ValueDeserializer {
     return set;
   }
 
-  private readJSArrayBuffer(isShared: boolean, isResizable: boolean): ArrayBuffer | null {
+  private readJSArrayBuffer(isShared: boolean, isResizable: boolean): ArrayBufferLike | null {
     const id = this.nextId++;
     if (isShared) {
       const cloneId = this.readVarInt();
@@ -1880,7 +1882,7 @@ export class ValueDeserializer {
 
     const arrayBuffer = isResizable
       // @ts-ignore: missing types
-      ? new ArrayBuffer(byteLength, { maxByteLength }) 
+      ? new ArrayBuffer(byteLength, { maxByteLength })
       : new ArrayBuffer(byteLength);
 
     if (byteLength > 0) {
@@ -1931,7 +1933,7 @@ export class ValueDeserializer {
     if (tag === ArrayBufferViewTag.kDataView) {
       // We can't really do anything about these in userland
       // const isLengthTracking = { value: false };
-      // const isBackedByRab = { value: false }; 
+      // const isBackedByRab = { value: false };
       if (!this.validateJSArrayBufferViewFlags(buffer, flags, /* isLengthTracking, isBackedByRab */)) {
         return null;
       }
@@ -1958,7 +1960,7 @@ export class ValueDeserializer {
     this.addObjectWithID(id, typedArray);
     return typedArray;
   }
-  
+
   // XXX: Should probably co-locate this with the inverse function
   private getTypedArrayConstructorFor(tag: ArrayBufferViewTag): TypedArrayConstructor {
     switch (tag) {
@@ -1977,20 +1979,21 @@ export class ValueDeserializer {
       case ArrayBufferViewTag.kUint32Array:
         return Uint32Array;
       case ArrayBufferViewTag.kFloat16Array:
-        return 'Float16Array' in globalThis 
-          ? globalThis.Float16Array 
+        return 'Float16Array' in globalThis
+          // @ts-ignore
+          ? globalThis.Float16Array
           : (() => { throw new Error('Float16Array is not supported in this environment') })();
       case ArrayBufferViewTag.kFloat32Array:
         return Float32Array;
       case ArrayBufferViewTag.kFloat64Array:
         return Float64Array;
       case ArrayBufferViewTag.kBigInt64Array:
-        return 'BigInt64Array' in globalThis 
-          ? globalThis.BigInt64Array 
+        return 'BigInt64Array' in globalThis
+          ? globalThis.BigInt64Array
           : (() => { throw new Error('BigInt64Array is not supported in this environment') })();
       case ArrayBufferViewTag.kBigUint64Array:
-        return 'BigUint64Array' in globalThis 
-          ? globalThis.BigUint64Array 
+        return 'BigUint64Array' in globalThis
+          ? globalThis.BigUint64Array
           : (() => { throw new Error('BigUint64Array is not supported in this environment') })()
       default:
         throw new Error('Unknown ArrayBufferViewTag');
@@ -2048,7 +2051,7 @@ export class ValueDeserializer {
       }
     }
 
-    const error = new ErrorCtor(message, { 
+    const error = new ErrorCtor(message, {
       cause: cause === sNull ? null : cause
     });
 
