@@ -1,8 +1,8 @@
 {
   "name": "@workers/node-serialization-api",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "exports": "./v8.ts",
   "imports": {
-    "@workers/v8-value-serializer-core": "jsr:@workers/v8-value-serializer-core@^0.1.13"
+    "@workers/v8-value-serializer-core": "jsr:@workers/v8-value-serializer-core@^0.1.14"
   }
 }
