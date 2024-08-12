@@ -292,6 +292,10 @@ function stringFromCharCode(bytes: Uint8Array|Uint16Array): string {
 // Helper to fail certain instanceof checks
 function Never() {}
 
+function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceStart: number, sourceEnd: number) {
+  dest.set(source.subarray(sourceStart, sourceEnd), destStart);
+}
+
 //#endregion
 
 export interface ValueSerializerDelegate {
@@ -525,6 +529,7 @@ export class ValueSerializer {
       this.expandBuffer(newSize);
     }
     this.size = newSize;
+    // XXX: This is safe because the only use of this method is aligning the buffer
     return new Uint16Array(this.buffer, oldSize, bytes / 2);
   }
 
@@ -1399,11 +1404,20 @@ export class ValueDeserializer {
     return offset;
   }
 
-  private readRawBytesAsUint16(size: number): Uint16Array | null {
-    if (this.end - this.position < size) return null;
-    const bytes = new Uint16Array(this.data.buffer, this.data.byteOffset + this.position, size / 2);
-    this.position += size;
-    return bytes;
+  private readRawBytesAsUint16(byteLength: number): Uint16Array | null {
+    if (this.end - this.position < byteLength) return null;
+
+    const posOffset = this.data.byteOffset + this.position;
+    if (posOffset % 2 === 0) {
+      this.position += byteLength;
+      return new Uint16Array(this.data.buffer, posOffset, byteLength / 2);
+    } else {
+      // Must copy to an aligned buffer first... This sucks, but probably still better than calling `.getUint16` in a loop...
+      const bufferCopy = new Uint8Array(byteLength);
+      copy(this.data, bufferCopy, 0, this.position, this.position + byteLength);
+      this.position += byteLength;
+      return new Uint16Array(bufferCopy.buffer, bufferCopy.byteOffset, byteLength / 2);
+    }
   }
 
   readByte(): number {
