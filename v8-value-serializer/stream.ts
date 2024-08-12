@@ -2,14 +2,14 @@ import { Serializer, type SerializerOptions, Deserializer, type DeserializerOpti
 
 /** Customize behavior of the serializer stream */
 export interface SerializerStreamOptions extends SerializerOptions {
-  /** Provide a custom {@link Serializer} class */
-  serializer?: typeof Serializer
+  /** Provide a custom serializer class */
+  serializer?: new (opts?: any) => { serialize(value: any): Uint8Array }
 }
 
 /** Customize behavior of the deserializer stream */
 export interface DeserializerStreamOptions extends DeserializerOptions {
   /** Provide a custom {@link Deserializer} class */
-  deserializer?: typeof Deserializer
+  deserializer?: new (buffer: Uint8Array, opts?: any) => { deserialize(): any }
 }
 
 /**
@@ -21,9 +21,10 @@ export interface DeserializerStreamOptions extends DeserializerOptions {
  */
 export class SerializerStream extends TransformStream<any, Uint8Array> {
   constructor(options?: SerializerStreamOptions) {
+    const Ser = options?.serializer ?? Serializer;
     super({
       transform(value, controller) {
-        const body = new (options?.serializer ?? Serializer)(options).serialize(value);
+        const body = new Ser(options).serialize(value);
         const chunk = new Serializer().serialize(body);
         controller.enqueue(chunk);
       },
@@ -39,6 +40,7 @@ export class SerializerStream extends TransformStream<any, Uint8Array> {
 export class DeserializerStream extends TransformStream<Uint8Array, any> {
   constructor(options?: DeserializerStreamOptions) {
     let incompleteBuffer: Uint8Array|null = null;
+    const Des = options?.deserializer ?? Deserializer;
     super({
       transform(chunk, controller) {
         if (incompleteBuffer) {
@@ -52,12 +54,12 @@ export class DeserializerStream extends TransformStream<Uint8Array, any> {
             return;
           }
 
-          const deserializer = new Deserializer(chunk, options);
+          const deserializer = new Deserializer(chunk);
           (deserializer as any).deserializer.suppressDeserializationErrors = true;
           const body = (deserializer as any).deserializer.readObject();
 
           if (body !== null) {
-            const value = new (options?.deserializer ?? Deserializer)(body, options).deserialize();
+            const value = new Des(body, options).deserialize();
             controller.enqueue(value);
             chunk = chunk.subarray((deserializer as any).deserializer.position);
           } else {
