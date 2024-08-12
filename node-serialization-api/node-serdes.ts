@@ -131,17 +131,8 @@ export abstract class Serializer implements ISerializer, ValueSerializerDelegate
     if (source instanceof Uint8Array) {
       this.serializer.writeRawBytes(source);
     } else {
-      this.serializer.writeRawBuffer(source.buffer, source.byteOffset, source.byteLength);
+      this.serializer.writeRawBuffer(source.buffer as ArrayBuffer, source.byteOffset, source.byteLength);
     }
-  }
-
-  writeRawBytes_(buffer: BufferSource) {
-    const bytes = buffer instanceof Uint8Array
-      ? buffer
-      : 'buffer' in buffer
-        ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
-        : new Uint8Array(buffer);
-    this.serializer.writeRawBytes(bytes);
   }
 
   // appendBackingStoresTo(to: ArrayBuffer[]): void {

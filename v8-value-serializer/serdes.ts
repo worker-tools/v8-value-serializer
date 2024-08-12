@@ -23,19 +23,6 @@ function arrayBufferViewTypeToIndex(abView: object): number {
   if (abView instanceof DataView) return 9;
   if (abView instanceof BigInt64Array) return 11;
   if (abView instanceof BigUint64Array) return 12;
-  // if (abView instanceof Int8Array) return ArrayBufferViewTag.kInt8Array;
-  // if (abView instanceof Uint8Array) return ArrayBufferViewTag.kUint8Array;
-  // if (abView instanceof Uint8ClampedArray) return ArrayBufferViewTag.kUint8ClampedArray;
-  // if (abView instanceof Int16Array) return ArrayBufferViewTag.kInt16Array;
-  // if (abView instanceof Uint16Array) return ArrayBufferViewTag.kUint16Array;
-  // if (abView instanceof Int32Array) return ArrayBufferViewTag.kInt32Array;
-  // if (abView instanceof Uint32Array) return ArrayBufferViewTag.kUint32Array;
-  // if (abView instanceof globalThis.Float16Array) return ArrayBufferViewTag.kFloat16Array;
-  // if (abView instanceof Float32Array) return ArrayBufferViewTag.kFloat32Array;
-  // if (abView instanceof Float64Array) return ArrayBufferViewTag.kFloat64Array;
-  // if (abView instanceof BigInt64Array) return ArrayBufferViewTag.kBigInt64Array;
-  // if (abView instanceof BigUint64Array) return ArrayBufferViewTag.kBigUint64Array;
-  // if (abView instanceof DataView) return ArrayBufferViewTag.kDataView;
   return -1;
 }
 
@@ -54,6 +41,7 @@ function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBuffer
     case 10: return Uint8Array;
     case 11: return BigInt64Array;
     case 12: return BigUint64Array;
+    //#region Not actually used. Reusing these from V8 serialization proper would have been a nicer format than just enumerating from 0. One can dream...
     case ArrayBufferViewTag.kInt8Array: return Int8Array;
     case ArrayBufferViewTag.kUint8Array: return Uint8Array;
     case ArrayBufferViewTag.kUint8ClampedArray: return Uint8ClampedArray;
@@ -61,12 +49,13 @@ function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBuffer
     case ArrayBufferViewTag.kUint16Array: return Uint16Array;
     case ArrayBufferViewTag.kInt32Array: return Int32Array;
     case ArrayBufferViewTag.kUint32Array: return Uint32Array;
-    case ArrayBufferViewTag.kFloat16Array: return globalThis.Float16Array;
+    case ArrayBufferViewTag.kFloat16Array: return (globalThis as any).Float16Array;
     case ArrayBufferViewTag.kFloat32Array: return Float32Array;
     case ArrayBufferViewTag.kFloat64Array: return Float64Array;
     case ArrayBufferViewTag.kBigInt64Array: return BigInt64Array;
     case ArrayBufferViewTag.kBigUint64Array: return BigUint64Array;
     case ArrayBufferViewTag.kDataView: return DataView;
+    //#endregion
     default: return undefined;
   }
 }
@@ -146,7 +135,7 @@ export class Serializer implements ValueSerializerDelegate {
     const abView = object as ArrayBufferView;
     this.serializer.writeUint32(i);
     this.serializer.writeUint32(abView.byteLength);
-    this.serializer.writeRawBuffer(abView.buffer, abView.byteOffset, abView.byteLength);
+    this.serializer.writeRawBuffer(abView.buffer as ArrayBuffer, abView.byteOffset, abView.byteLength);
     return true
   }
 
