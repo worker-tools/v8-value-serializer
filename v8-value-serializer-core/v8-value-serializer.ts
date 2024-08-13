@@ -1,77 +1,78 @@
 export const kLatestVersion = 15;
 
-export const enum SerializationTag {
+export type SerializationTag = typeof SerializationTag[keyof typeof SerializationTag];
+export const SerializationTag = Object.freeze({
   // version:uint32_t (if at beginning of data, sets version > 0)
-  kVersion = 0xFF,
+  kVersion: 0xFF,
   // ignore
-  kPadding = 0x00,
+  kPadding: 0x00,
   // refTableSize:uint32_t (previously used for sanity checks; safe to ignore)
-  kVerifyObjectCount = 63, // '?'
+  kVerifyObjectCount: 63, // '?'
   // Oddballs (no data).
-  kTheHole = 45, // '-'
-  kUndefined = 95, // '_'
-  kNull = 48, // '0'
-  kTrue = 84, // 'T'
-  kFalse = 70, // 'F'
+  kTheHole: 45, // '-'
+  kUndefined: 95, // '_'
+  kNull: 48, // '0'
+  kTrue: 84, // 'T'
+  kFalse: 70, // 'F'
   // Number represented as 32-bit integer, ZigZag-encoded
   // (like sint32 in protobuf)
-  kInt32 = 73, // 'I'
+  kInt32: 73, // 'I'
   // Number represented as 32-bit unsigned integer, varint-encoded
   // (like uint32 in protobuf)
-  kUint32 = 85, // 'U'
+  kUint32: 85, // 'U'
   // Number represented as a 64-bit double.
   // Host byte order is used (N.B. this makes the format non-portable).
-  kDouble = 78, // 'N'
+  kDouble: 78, // 'N'
   // BigInt. Bitfield:uint32_t, then raw digits storage.
-  kBigInt = 90, // 'Z'
+  kBigInt: 90, // 'Z'
   // byteLength:uint32_t, then raw data
-  kUtf8String = 83, // 'S'
-  kOneByteString = 34, // '"'
-  kTwoByteString = 99, // 'c'
+  kUtf8String: 83, // 'S'
+  kOneByteString: 34, // '"'
+  kTwoByteString: 99, // 'c'
   // Reference to a serialized object. objectID:uint32_t
-  kObjectReference = 94, // '^'
+  kObjectReference: 94, // '^'
   // Beginning of a JS object.
-  kBeginJSObject = 111, // 'o'
+  kBeginJSObject: 111, // 'o'
   // End of a JS object. numProperties:uint32_t
-  kEndJSObject = 123, // '{'
+  kEndJSObject: 123, // '{'
   // Beginning of a sparse JS array. length:uint32_t
   // Elements and properties are written as key/value pairs, like objects.
-  kBeginSparseJSArray = 97, // 'a'
+  kBeginSparseJSArray: 97, // 'a'
   // End of a sparse JS array. numProperties:uint32_t length:uint32_t
-  kEndSparseJSArray = 64, // '@'
+  kEndSparseJSArray: 64, // '@'
   // Beginning of a dense JS array. length:uint32_t
   // |length| elements, followed by properties as key/value pairs
-  kBeginDenseJSArray = 65, // 'A'
+  kBeginDenseJSArray: 65, // 'A'
   // End of a dense JS array. numProperties:uint32_t length:uint32_t
-  kEndDenseJSArray = 36, // '$'
+  kEndDenseJSArray: 36, // '$'
   // Date. millisSinceEpoch:double
-  kDate = 68, // 'D'
+  kDate: 68, // 'D'
   // Boolean object. No data.
-  kTrueObject = 121, // 'y'
-  kFalseObject = 120, // 'x'
+  kTrueObject: 121, // 'y'
+  kFalseObject: 120, // 'x'
   // Number object. value:double
-  kNumberObject = 110, // 'n'
+  kNumberObject: 110, // 'n'
   // BigInt object. Bitfield:uint32_t, then raw digits storage.
-  kBigIntObject = 122, // 'z'
+  kBigIntObject: 122, // 'z'
   // String object, UTF-8 encoding. byteLength:uint32_t, then raw data.
-  kStringObject = 115, // 's'
+  kStringObject: 115, // 's'
   // Regular expression, UTF-8 encoding. byteLength:uint32_t, raw data,
   // flags:uint32_t.
-  kRegExp = 82, // 'R'
+  kRegExp: 82, // 'R'
   // Beginning of a JS map.
-  kBeginJSMap = 59, // ';'
+  kBeginJSMap: 59, // ';'
   // End of a JS map. length:uint32_t.
-  kEndJSMap = 58, // ':'
+  kEndJSMap: 58, // ':'
   // Beginning of a JS set.
-  kBeginJSSet = 39, // "'"
+  kBeginJSSet: 39, // "'"
   // End of a JS set. length:uint32_t.
-  kEndJSSet = 44, // ','
+  kEndJSSet: 44, // ','
   // Array buffer. byteLength:uint32_t, then raw data.
-  kArrayBuffer = 66, // 'B'
+  kArrayBuffer: 66, // 'B'
   // Resizable ArrayBuffer.
-  kResizableArrayBuffer = 126, // '~'
+  kResizableArrayBuffer: 126, // '~'
   // Array buffer (transferred). transferID:uint32_t
-  kArrayBufferTransfer = 116, // 't'
+  kArrayBufferTransfer: 116, // 't'
   // View into an array buffer.
   // subtag:ArrayBufferViewTag, byteOffset:uint32_t, byteLength:uint32_t
   // For typed arrays, byteOffset and byteLength must be divisible by the size
@@ -79,22 +80,22 @@ export const enum SerializationTag {
   // Note: kArrayBufferView is special, and should have an ArrayBuffer (or an
   // ObjectReference to one) serialized just before it. This is a quirk arising
   // from the previous stack-based implementation.
-  kArrayBufferView = 86, // 'V'
+  kArrayBufferView: 86, // 'V'
   // Shared array buffer. transferID:uint32_t
-  kSharedArrayBuffer = 117, // 'u'
+  kSharedArrayBuffer: 117, // 'u'
   // A HeapObject shared across Isolates. sharedValueID:uint32_t
-  kSharedObject = 112, // 'p'
+  kSharedObject: 112, // 'p'
   // A wasm module object transfer. next value is its index.
-  kWasmModuleTransfer = 119, // 'w'
+  kWasmModuleTransfer: 119, // 'w'
   // The delegate is responsible for processing all following data.
   // This "escapes" to whatever wire format the delegate chooses.
-  kHostObject = 92, // '\\'
+  kHostObject: 92, // '\\'
   // A transferred WebAssembly.Memory object. maximumPages:int32_t, then by
   // SharedArrayBuffer tag and its data.
-  kWasmMemoryTransfer = 109, // 'm'
+  kWasmMemoryTransfer: 109, // 'm'
   // A list of (subtag: ErrorTag, [subtag dependent data]). See ErrorTag for
   // details.
-  kError = 114, // 'r'
+  kError: 114, // 'r'
 
   // The following tags are reserved because they were in use in Chromium before
   // the kHostObject tag was introduced in format version 13, at
@@ -112,61 +113,63 @@ export const enum SerializationTag {
   //
   // It might be possible to also free up other tags which were never persisted
   // (e.g. because they were used only for transfer) in the future.
-  kLegacyReservedMessagePort = 77, // 'M'
-  kLegacyReservedBlob = 98, // 'b'
-  kLegacyReservedBlobIndex = 105, // 'i'
-  kLegacyReservedFile = 102, // 'f'
-  kLegacyReservedFileIndex = 101, // 'e'
-  kLegacyReservedDOMFileSystem = 100, // 'd'
-  kLegacyReservedFileList = 108, // 'l'
-  kLegacyReservedFileListIndex = 76, // 'L'
-  kLegacyReservedImageData = 35, // '#'
-  kLegacyReservedImageBitmap = 103, // 'g'
-  kLegacyReservedImageBitmapTransfer = 71, // 'G'
-  kLegacyReservedOffscreenCanvas = 72, // 'H'
-  kLegacyReservedCryptoKey = 75, // 'K'
-  kLegacyReservedRTCCertificate = 107, // 'k'
-}
+  kLegacyReservedMessagePort: 77, // 'M'
+  kLegacyReservedBlob: 98, // 'b'
+  kLegacyReservedBlobIndex: 105, // 'i'
+  kLegacyReservedFile: 102, // 'f'
+  kLegacyReservedFileIndex: 101, // 'e'
+  kLegacyReservedDOMFileSystem: 100, // 'd'
+  kLegacyReservedFileList: 108, // 'l'
+  kLegacyReservedFileListIndex: 76, // 'L'
+  kLegacyReservedImageData: 35, // '#'
+  kLegacyReservedImageBitmap: 103, // 'g'
+  kLegacyReservedImageBitmapTransfer: 71, // 'G'
+  kLegacyReservedOffscreenCanvas: 72, // 'H'
+  kLegacyReservedCryptoKey: 75, // 'K'
+  kLegacyReservedRTCCertificate: 107, // 'k'
+});
 
-export const enum ArrayBufferViewTag {
-  kInt8Array = 98, // 'b'
-  kUint8Array = 66, // 'B'
-  kUint8ClampedArray = 67, // 'C'
-  kInt16Array = 119, // 'w'
-  kUint16Array = 87, // 'W'
-  kInt32Array = 100, // 'd'
-  kUint32Array = 68, // 'D'
-  kFloat16Array = 104, // 'h'
-  kFloat32Array = 102, // 'f'
-  kFloat64Array = 70, // 'F'
-  kBigInt64Array = 113, // 'q'
-  kBigUint64Array = 81, // 'Q'
-  kDataView = 63, // '?'
+export type ArrayBufferViewTag = typeof ArrayBufferViewTag[keyof typeof ArrayBufferViewTag];
+export const ArrayBufferViewTag = {
+  kInt8Array: 98, // 'b'
+  kUint8Array: 66, // 'B'
+  kUint8ClampedArray: 67, // 'C'
+  kInt16Array: 119, // 'w'
+  kUint16Array: 87, // 'W'
+  kInt32Array: 100, // 'd'
+  kUint32Array: 68, // 'D'
+  kFloat16Array: 104, // 'h'
+  kFloat32Array: 102, // 'f'
+  kFloat64Array: 70, // 'F'
+  kBigInt64Array: 113, // 'q'
+  kBigUint64Array: 81, // 'Q'
+  kDataView: 63, // '?'
 }
 
 // Sub-tags only meaningful for error serialization.
-export const enum ErrorTag {
+export type ErrorTag = typeof ErrorTag[keyof typeof ErrorTag];
+export const ErrorTag = Object.freeze({
   // The error is a EvalError. No accompanying data.
-  kEvalErrorPrototype = 69, // 'E'
+  kEvalErrorPrototype: 69, // 'E'
   // The error is a RangeError. No accompanying data.
-  kRangeErrorPrototype = 82, // 'R'
+  kRangeErrorPrototype: 82, // 'R'
   // The error is a ReferenceError. No accompanying data.
-  kReferenceErrorPrototype = 70, // 'F'
+  kReferenceErrorPrototype: 70, // 'F'
   // The error is a SyntaxError. No accompanying data.
-  kSyntaxErrorPrototype = 83, // 'S'
+  kSyntaxErrorPrototype: 83, // 'S'
   // The error is a TypeError. No accompanying data.
-  kTypeErrorPrototype = 84, // 'T'
+  kTypeErrorPrototype: 84, // 'T'
   // The error is a URIError. No accompanying data.
-  kUriErrorPrototype = 85, // 'U'
+  kUriErrorPrototype: 85, // 'U'
   // Followed by message: string.
-  kMessage = 109, // 'm'
+  kMessage: 109, // 'm'
   // Followed by a JS object: cause.
-  kCause = 99, // 'c'
+  kCause: 99, // 'c'
   // Followed by stack: string.
-  kStack = 115, // 's'
+  kStack: 115, // 's'
   // The end of this error information.
-  kEnd = 46, // '.'
-}
+  kEnd: 46, // '.'
+});
 
 //#region Helpers
 type TypedArrayConstructor =
