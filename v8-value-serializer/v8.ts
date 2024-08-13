@@ -75,7 +75,7 @@ class DefaultSerializer extends Serializer {
                                       abView.byteLength));
   }
 
-  get _getDataCloneError() { return Error };
+  get _getDataCloneError(): typeof Error { return Error };
   _getSharedArrayBufferId(_sab: SharedArrayBuffer): never {
     throw new Error("Method not implemented.");
   }
