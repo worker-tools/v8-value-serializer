@@ -10,7 +10,7 @@ function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceSta
 }
 //#endregion
 
-/* V8 serialization API with `Buffer` replaced by `Uint8Array` */
+/** V8 serialization API with `Buffer` replaced by `Uint8Array` @module */
 
 function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
   const type = ObjectPrototypeToString(abView);
