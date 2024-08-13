@@ -1,3 +1,11 @@
+/**
+ * Allows using the V8 serialization format as a transform stream. 
+ * 
+ * Note that these are not a general-purpose streams, i.e. it can't deserialize values that weren't serialized with this library 
+ * and other libraries can't deserialize values serialized with this library, unless the implement the same double-encoding scheme described below.
+ * @module
+ */
+
 import { Serializer, type SerializerOptions, Deserializer, type DeserializerOptions } from "./serdes.ts";
 
 /** Customize behavior of the serializer stream */
