@@ -10,20 +10,7 @@ function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceSta
 }
 //#endregion
 
-/* V8 serialization API */
-
-/* JS methods for the base objects */
-Serializer.prototype._getDataCloneError = Error;
-
-/**
- * Reads raw bytes from the deserializer's internal buffer.
- */
-Deserializer.prototype.readRawBytes = function readRawBytes(length: number): Uint8Array {
-  const offset = this._readRawBytes(length);
-  return new Uint8Array(this.buffer.buffer,
-                        this.buffer.byteOffset + offset,
-                        length);
-};
+/* V8 serialization API with `Buffer` replaced by `Uint8Array` */
 
 function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
   const type = ObjectPrototypeToString(abView);
@@ -37,7 +24,7 @@ function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
   if (type === '[object Float32Array]') return 7;
   if (type === '[object Float64Array]') return 8;
   if (type === '[object DataView]') return 9;
-  // Index 10 is FastBuffer.
+  // Index 10 is default.
   if (type === '[object BigInt64Array]') return 11;
   if (type === '[object BigUint64Array]') return 12;
   return -1;
@@ -61,7 +48,10 @@ function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBuffer
   return undefined;
 }
 
-// @ts-expect-error: doesn't implement _getDataCloneError
+/**
+ * A subclass of {@link Serializer} that serializes `TypedArray` (in particular `Uint8Array`) and `DataView` objects as host objects, 
+ * and only stores the part of their underlying ArrayBuffers that they are referring to.
+ */
 class DefaultSerializer extends Serializer {
   constructor() {
     super();
@@ -69,18 +59,7 @@ class DefaultSerializer extends Serializer {
     this._setTreatArrayBufferViewsAsHostObjects(true);
   }
 
-  /**
-   * Used to write some kind of host object, i.e. an
-   * object that is created by native C++ bindings.
-   */
   _writeHostObject(abView: ArrayBufferView): void {
-    // Keep track of how to handle different ArrayBufferViews. The default
-    // Serializer for Node does not use the V8 methods for serializing those
-    // objects because Node's `Buffer` objects use pooled allocation in many
-    // cases, and their underlying `ArrayBuffer`s would show up in the
-    // serialization. Because a) those may contain sensitive data and the user
-    // may not be aware of that and b) they are often much larger than the
-    // `Buffer` itself, custom serialization is applied.
     let i = 10;  // FastBuffer
     if (!(abView instanceof Uint8Array)) {
       i = arrayBufferViewTypeToIndex(abView);
@@ -95,13 +74,17 @@ class DefaultSerializer extends Serializer {
                                       abView.byteOffset,
                                       abView.byteLength));
   }
+
+  get _getDataCloneError() { return Error };
+  _getSharedArrayBufferId(_sab: SharedArrayBuffer): never {
+    throw new Error("Method not implemented.");
+  }
 }
 
+/**
+ * A subclass of {@link Deserializer} corresponding to the format written by {@link DefaultSerializer}. 
+ */
 class DefaultDeserializer extends Deserializer {
-  /**
-   * Used to read some kind of host object, i.e. an
-   * object that is created by native C++ bindings.
-   */
   _readHostObject(): any {
     const typeIndex = this.readUint32();
     const ctor = arrayBufferViewIndexToType(typeIndex);
@@ -125,8 +108,7 @@ class DefaultDeserializer extends Deserializer {
 }
 
 /**
- * Uses a `DefaultSerializer` to serialize `value`
- * into a buffer.
+ * Uses a {@link DefaultSerializer} to serialize `value` into a buffer.
  */
 function serialize(value: any): Uint8Array {
   const ser = new DefaultSerializer();
@@ -136,9 +118,7 @@ function serialize(value: any): Uint8Array {
 }
 
 /**
- * Uses a `DefaultDeserializer` with default options
- * to read a JavaScript value from a buffer.
- * @returns {any}
+ * Uses a {@link DefaultDeserializer} with default options to read a JavaScript value from a buffer.
  */
 function deserialize(buffer: ArrayBufferView | DataView): any {
   const der = new DefaultDeserializer(buffer);
