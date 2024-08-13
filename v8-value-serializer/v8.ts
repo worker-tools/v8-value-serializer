@@ -1,3 +1,8 @@
+/** 
+ * V8 serialization API with `Buffer` replaced by `Uint8Array`
+ * @module
+ */
+
 import { Serializer, Deserializer } from "./node-serdes.ts";
 
 //#region lib
@@ -9,8 +14,6 @@ function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceSta
   dest.set(source.subarray(sourceStart, sourceEnd), destStart);
 }
 //#endregion
-
-/** V8 serialization API with `Buffer` replaced by `Uint8Array` @module */
 
 function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
   const type = ObjectPrototypeToString(abView);

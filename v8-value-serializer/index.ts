@@ -1,3 +1,8 @@
+/**
+ * A plain JS implementation of V8's value serialization format. 
+ * @module
+ */
+
 import { Deserializer, type DeserializerOptions, Serializer, type SerializerOptions } from "./serdes.ts";
 
 export type { DeserializerOptions, SerializerOptions };

@@ -1,6 +1,6 @@
 # V8 Value Serializer
 
-A pure JS implementation of V8's value serialization format.
+A plain JS implementation of V8's value serialization format.
 
 ## Primer
 V8 has an internal object serialization format that implements the [Structured Clone Algorithm][sca] and is used to implement things like `structuredClone` and `postMessage`.
