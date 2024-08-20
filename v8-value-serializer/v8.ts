@@ -1,5 +1,5 @@
 /** 
- * V8 serialization API with `Buffer` replaced by `Uint8Array`
+ * Node's V8 serialization API, but with `Buffer` replaced by `Uint8Array`.
  * @module
  */
 

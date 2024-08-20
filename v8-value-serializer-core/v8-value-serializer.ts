@@ -665,7 +665,8 @@ export class ValueSerializer {
   private encodeInto: (chunk: string, dest: Uint8Array) => { read: number, written: number } = 'encodeInto' in TextEncoder.prototype
   ? (chunk, dest) => this.te.encodeInto(chunk, dest)
   : (chunk, dest) => {
-    const encoded = (this.te as TextEncoder).encode(chunk);
+    const encoded = this.te.encode(chunk);
+    if (encoded.length > dest.length) return { read: chunk.length, written: 0 };
     dest.set(encoded);
     return { read: chunk.length, written: encoded.length };
   }
