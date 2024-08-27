@@ -33,7 +33,10 @@ export class SerializerStream extends TransformStream<any, Uint8Array> {
     super({
       transform(value, controller) {
         const body = new Ser(options).serialize(value);
-        const chunk = new Ser().serialize(body);
+        // Using the plain JS serializer for the outer encoding. 
+        // Custom serializers might handle `Uint8Array`s in arbitrary ways and we don't want that for the part that makes streaming possible.
+        // Since it's just writing an `Uint8Array` the performance impact should be negigible.
+        const chunk = new Serializer().serialize(body);
         controller.enqueue(chunk);
       },
     });
@@ -62,14 +65,16 @@ export class DeserializerStream extends TransformStream<Uint8Array, any> {
             return;
           }
 
-          const deserializer = new Des(chunk);
-          (deserializer as any).deserializer.suppressDeserializationErrors = true;
-          const body = (deserializer as any).deserializer.readObject();
+          // Need to use our plain JS deserializer for the outer encoding because we need access to internal properties to make streaming possible.
+          // Since we just read an `Uint8Array` the performance impact should be negigible.
+          const deserializerCore = (new Deserializer(chunk) as any).deserializer;
+          deserializerCore.suppressDeserializationErrors = true;
 
+          const body = deserializerCore.readObject();
           if (body !== null) {
             const value = new Des(body, options).deserialize();
             controller.enqueue(value);
-            chunk = chunk.subarray((deserializer as any).deserializer.position);
+            chunk = chunk.subarray(deserializerCore.position);
           } else {
             incompleteBuffer = chunk;
             break;
