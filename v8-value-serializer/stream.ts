@@ -6,7 +6,7 @@
  * @module
  */
 
-import { Serializer, type SerializerOptions, Deserializer, type DeserializerOptions } from "./serdes.ts";
+import { Serializer, SerializerOptions, Deserializer, DeserializerOptions } from "./serdes.ts";
 
 /** Customize behavior of the serializer stream */
 export interface SerializerStreamOptions extends SerializerOptions {
@@ -33,7 +33,7 @@ export class SerializerStream extends TransformStream<any, Uint8Array> {
     super({
       transform(value, controller) {
         const body = new Ser(options).serialize(value);
-        const chunk = new Serializer().serialize(body);
+        const chunk = new Ser().serialize(body);
         controller.enqueue(chunk);
       },
     });
@@ -62,7 +62,7 @@ export class DeserializerStream extends TransformStream<Uint8Array, any> {
             return;
           }
 
-          const deserializer = new Deserializer(chunk);
+          const deserializer = new Des(chunk);
           (deserializer as any).deserializer.suppressDeserializationErrors = true;
           const body = (deserializer as any).deserializer.readObject();
 
