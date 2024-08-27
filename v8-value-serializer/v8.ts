@@ -27,7 +27,7 @@ function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
   if (type === '[object Float32Array]') return 7;
   if (type === '[object Float64Array]') return 8;
   if (type === '[object DataView]') return 9;
-  // Index 10 is default.
+  // Index 10 is node:Buffer, not supported here
   if (type === '[object BigInt64Array]') return 11;
   if (type === '[object BigUint64Array]') return 12;
   return -1;
@@ -63,7 +63,7 @@ class DefaultSerializer extends Serializer {
   }
 
   _writeHostObject(abView: ArrayBufferView): void {
-    let i = 10;  // FastBuffer
+    let i = 1;  // Uint8Array
     if (!(abView instanceof Uint8Array)) {
       i = arrayBufferViewTypeToIndex(abView);
       if (i === -1) {
