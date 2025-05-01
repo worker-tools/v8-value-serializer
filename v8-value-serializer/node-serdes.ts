@@ -95,7 +95,7 @@ export abstract class Serializer implements ISerializer, ValueSerializerDelegate
   }
 
   releaseBuffer(): Uint8Array {
-    return this.data!.data!;
+    return this.data?.data ?? new Uint8Array(0);
   }
 
   transferArrayBuffer(id: number, arrayBuffer: ArrayBuffer) {

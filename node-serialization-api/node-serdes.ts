@@ -96,7 +96,7 @@ export abstract class Serializer implements ISerializer, ValueSerializerDelegate
   }
 
   releaseBuffer(): Buffer {
-    const buffer = this.data!.data!;
+    const buffer = this.data?.data ?? [];
     return Buffer.from(buffer);
   }
 
