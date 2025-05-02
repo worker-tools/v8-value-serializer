@@ -177,7 +177,6 @@ type TypedArrayConstructor =
   | Uint16ArrayConstructor
   | Int32ArrayConstructor
   | Uint32ArrayConstructor
-  // @ts-ignore
   | typeof globalThis.Float16Array
   | Float32ArrayConstructor
   | Float64ArrayConstructor
@@ -1971,6 +1970,7 @@ export class ValueDeserializer {
       return null;
     }
 
+    // @ts-ignore: not interested
     const typedArray = new externalArrayCtor(buffer, byteOffset, byteLength / elementSize, /* isLengthTracking.value */);
     this.addObjectWithID(id, typedArray);
     return typedArray;

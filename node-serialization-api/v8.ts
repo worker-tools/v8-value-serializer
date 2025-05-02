@@ -6,7 +6,7 @@ function ObjectPrototypeToString(obj: unknown): string {
   return Object.prototype.toString.call(obj);
 }
 
-function copy(source: Uint8Array, dest: Uint8Array, destStart: number, sourceStart: number, sourceEnd: number) {
+function copy(source: Uint8Array, dest: Buffer, destStart: number, sourceStart: number, sourceEnd: number) {
   dest.set(source.subarray(sourceStart, sourceEnd), destStart);
 }
 
