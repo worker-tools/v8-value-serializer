@@ -1,6 +1,6 @@
 {
   "name": "@workers/v8-value-serializer",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "exports": {
     ".": "./index.ts",
     "./stream": "./stream.ts",
