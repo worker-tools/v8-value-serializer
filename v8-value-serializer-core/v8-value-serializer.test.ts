@@ -29,6 +29,9 @@ const testCases = [
   new Map([[null, null]]),
   new ArrayBuffer(8),
   new Uint8Array(8).fill(255),
+  ...(typeof globalThis.Float16Array === "function"
+    ? [new globalThis.Float16Array([1, 2])]
+    : []),
   crypto.getRandomValues(new Uint8Array(8)),
   crypto.getRandomValues(new Uint8Array(4096)),
   new Error(),
@@ -115,6 +118,14 @@ const testCases = [
   // new Uint8Array(new ArrayBuffer(8, { maxByteLength: 4096 }))
 ];
 
+function nativeSerialize(value: any): Uint8Array {
+  const serializer = new V8.Serializer();
+  serializer.writeHeader();
+  serializer.writeValue(value);
+  const buffer = serializer.releaseBuffer();
+  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+}
+
 Deno.test("serialize", async (t) => {
   for (const obj of testCases) {
     const inspected = Deno.inspect(obj).replace(/^\ \ +/gm, ' ').replaceAll('\n', '').substring(0, 100)
@@ -123,7 +134,7 @@ Deno.test("serialize", async (t) => {
       ser.writeHeader();
       ser.writeObject(obj);
       const actual = ser.release()
-      const expected = V8.serialize(obj)
+      const expected = nativeSerialize(obj)
       // Can't compare buffers directly, because may change with V8 version
       if (actual.byteLength !== expected.byteLength) {
         console.warn(`Length mismatch:`, actual.byteLength, 'vs', expected.byteLength)
@@ -146,13 +157,13 @@ Deno.test("serialize", async (t) => {
   }
 
   await t.step("round-tripping all at once", () => {
-    const expected = V8.serialize(testCases)
+    const expected = nativeSerialize(testCases)
     // console.log(expected, expected.byteLength)
 
     const ser = new ValueSerializer()
     ser.writeHeader();
     ser.writeObject(testCases);
-    const actual = Buffer.from(ser.release())
+    const actual = ser.release()
 
     // console.log(actual, actual.byteLength)
     assertEquals(V8.deserialize(actual), V8.deserialize(expected))
@@ -180,8 +191,6 @@ Deno.test("stream", () => {
 
   const des = new ValueDeserializer(partial)
   des.readHeader();
-  console.log(des.readObjectWrapper());
-  console.log(des.readObjectWrapper());
+  assertEquals(des.readObjectWrapper(), obj);
+  assertEquals(des.readObjectWrapper(), obj);
 })
-
-

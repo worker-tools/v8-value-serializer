@@ -14,7 +14,7 @@ export function serialize(value: any, options?: SerializerOptions): Uint8Array {
 }
 
 /** Deserialize a JavaScript object that was serialized using either this library or node's `v8` module. */
-export function deserialize(buffer: BufferSource, options?: DeserializerOptions): any {
+export function deserialize(buffer: ArrayBuffer | ArrayBufferView, options?: DeserializerOptions): any {
   return new Deserializer(buffer, options).deserialize();
 }
 

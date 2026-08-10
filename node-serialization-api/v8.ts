@@ -48,6 +48,7 @@ function arrayBufferViewTypeToIndex(abView: ArrayBufferView): number {
   // Index 10 is FastBuffer.
   if (type === '[object BigInt64Array]') return 11;
   if (type === '[object BigUint64Array]') return 12;
+  if (type === '[object Float16Array]') return 13;
   return -1;
 }
 
@@ -65,6 +66,7 @@ function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBuffer
   if (index === 10) return SlowBuffer as unknown as typeof Uint8Array;
   if (index === 11) return BigInt64Array;
   if (index === 12) return BigUint64Array;
+  if (index === 13) return globalThis.Float16Array;
   // @ts-expect-error
   return undefined;
 }

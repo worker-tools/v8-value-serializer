@@ -206,7 +206,7 @@ const SM_MAX = 2 ** 30 - 1; // 2^30 - 1
 const FixedArrayMaxLength = 2 ** 30 - 1
 
 function isSmi(value: number): value is number {
-  return Number.isInteger(value) && value >= SM_MIN && value <= SM_MAX;
+  return !Object.is(value, -0) && Number.isInteger(value) && value >= SM_MIN && value <= SM_MAX;
 }
 
 function getRegExpFlags(regexp: RegExp): number {
@@ -217,6 +217,8 @@ function getRegExpFlags(regexp: RegExp): number {
   if (regexp.sticky) flags |= 1 << 3; // sticky flag
   if (regexp.unicode) flags |= 1 << 4; // unicode flag
   if (regexp.dotAll) flags |= 1 << 5; // dotAll flag
+  if (regexp.hasIndices) flags |= 1 << 7; // hasIndices flag
+  if (regexp.unicodeSets) flags |= 1 << 8; // unicodeSets flag
   return flags;
 }
 
@@ -1793,12 +1795,14 @@ export class ValueDeserializer {
 
   private getFlagString(flags: number): string {
     let flagStr = '';
+    if (flags & (1 << 7)) flagStr += 'd';
     if (flags & (1 << 0)) flagStr += 'g';
     if (flags & (1 << 1)) flagStr += 'i';
     if (flags & (1 << 2)) flagStr += 'm';
-    if (flags & (1 << 3)) flagStr += 'y';
-    if (flags & (1 << 4)) flagStr += 'u';
     if (flags & (1 << 5)) flagStr += 's';
+    if (flags & (1 << 4)) flagStr += 'u';
+    if (flags & (1 << 8)) flagStr += 'v';
+    if (flags & (1 << 3)) flagStr += 'y';
     return flagStr;
   }
 

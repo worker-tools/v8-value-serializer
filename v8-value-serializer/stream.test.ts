@@ -80,11 +80,11 @@ Deno.test("custom serializer/deserializer implementation", async () => {
   const actual = await Array.fromAsync(stream
     .pipeThrough(new SerializerStream({
       serializer: class extends Serializer {
-        get hasCustomHostObjects(): boolean { return true }
-        isHostObject(object: unknown): boolean {
+        override get hasCustomHostObjects(): boolean { return true }
+        override isHostObject(object: unknown): boolean {
           return object instanceof Port;
         }
-        writeHostObject(object: object): boolean {
+        override writeHostObject(object: object): boolean {
           if (object instanceof Port) {
             this.serializer.writeUint32(SerializationTag.kLegacyReservedMessagePort);
             this.serializer.writeObject(object.value);
@@ -96,7 +96,7 @@ Deno.test("custom serializer/deserializer implementation", async () => {
     }))
     .pipeThrough(new DeserializerStream({
       deserializer: class extends Deserializer {
-        readHostObjectForTag(tag: number): object | null {
+        override readHostObjectForTag(tag: number): object | null {
           if (tag === SerializationTag.kLegacyReservedMessagePort) {
             const value = this.deserializer.readObjectWrapper();
             return value && new Port(value);

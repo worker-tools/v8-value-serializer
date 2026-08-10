@@ -225,25 +225,25 @@ export abstract class Deserializer implements IDeserializer, ValueDeserializerDe
 
   readUint32(): number {
     const n =  this.deserializer.readUint32()!;
-    if (!n) throw Error('readUint32() failed');
+    if (n === null) throw Error('readUint32() failed');
     return n;
   }
 
   readUint64(): [hi: number, low: number] {
     const bi = this.deserializer.readUint64()!;
-    if (!bi) throw Error('readUint64() failed');
+    if (bi === null) throw Error('readUint64() failed');
     return [Number(bi >> 32n), Number(bi & 0xFFFFFFFFn)];
   }
 
   readUint64_(): bigint {
     const value = this.deserializer.readUint64()!;
-    if (!value) throw Error('readUint64_() failed');
+    if (value === null) throw Error('readUint64_() failed');
     return value;
   }
 
   readDouble(): number {
     const value = this.deserializer.readDouble();
-    if (!value) throw Error('readDouble() failed');
+    if (value === null) throw Error('readDouble() failed');
     return value;
   }
 

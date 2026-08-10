@@ -23,6 +23,7 @@ function arrayBufferViewTypeToIndex(abView: object): number {
   if (abView instanceof DataView) return 9;
   if (abView instanceof BigInt64Array) return 11;
   if (abView instanceof BigUint64Array) return 12;
+  if (Object.prototype.toString.call(abView) === '[object Float16Array]') return 13;
   return -1;
 }
 
@@ -41,6 +42,7 @@ function arrayBufferViewIndexToType(index: number|null): ((new () => ArrayBuffer
     case 10: return Uint8Array;
     case 11: return BigInt64Array;
     case 12: return BigUint64Array;
+    case 13: return globalThis.Float16Array;
     //#region Not actually used. Reusing these from V8 serialization proper would have been a nicer format than just enumerating from 0. One can dream...
     case ArrayBufferViewTag.kInt8Array: return Int8Array;
     case ArrayBufferViewTag.kUint8Array: return Uint8Array;
@@ -163,7 +165,7 @@ export class Deserializer implements ValueDeserializerDelegate {
   protected deserializer: ValueDeserializer;
   protected buffer: Uint8Array;
 
-  constructor(buffer: BufferSource, options?: DeserializerOptions) {
+  constructor(buffer: ArrayBuffer | ArrayBufferView, options?: DeserializerOptions) {
     const data = this.buffer = buffer instanceof Uint8Array
       ? buffer
       : buffer instanceof ArrayBuffer
@@ -184,9 +186,9 @@ export class Deserializer implements ValueDeserializerDelegate {
     const Ctor = arrayBufferViewIndexToType(tag);
     if (!Ctor) return null;
     const byteLength = this.deserializer.readUint32();
-    if (!byteLength) return null;
+    if (byteLength === null) return null;
     const byteOffset = this.deserializer.readRawBytesNoAlloc(byteLength);
-    if (!byteOffset) return null;
+    if (byteOffset === null) return null;
     const BYTES_PER_ELEMENT = Ctor.BYTES_PER_ELEMENT || 1;
 
     const offset = this.buffer.byteOffset + byteOffset;
