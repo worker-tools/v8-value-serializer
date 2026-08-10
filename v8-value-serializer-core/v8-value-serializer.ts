@@ -209,6 +209,11 @@ function isSmi(value: number): value is number {
   return !Object.is(value, -0) && Number.isInteger(value) && value >= SM_MIN && value <= SM_MAX;
 }
 
+function isArrayIndex(key: string): boolean {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && index < 2 ** 32 - 1 && String(index) === key;
+}
+
 function getRegExpFlags(regexp: RegExp): number {
   let flags = 0;
   if (regexp.global) flags |= 1 << 0; // global flag
@@ -288,6 +293,19 @@ function stringFromCharCode(bytes: Uint8Array|Uint16Array): string {
     result += String.fromCharCode.apply(null, chunk as any);
   }
   return result;
+}
+
+const windows1252CodePoints = "€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008dŽ\u008f\u0090‘’“”•–—˜™š›œ\u009džŸ";
+const hasWindows1252Remapping = /[^\x00-\xff]/;
+const windows1252Remappings = /[^\x00-\xff]/g;
+
+function decodeLatin1(decoder: TextDecoder, bytes: Uint8Array): string {
+  const decoded = decoder.decode(bytes);
+  if (!hasWindows1252Remapping.test(decoded)) return decoded;
+  return decoded.replace(
+    windows1252Remappings,
+    (character) => String.fromCharCode(0x80 + windows1252CodePoints.indexOf(character)),
+  );
 }
 
 // Helper to fail certain instanceof checks
@@ -381,6 +399,7 @@ export class ValueSerializer {
 
   private nextId: number = 0;
   private idMap: Map<object, number> = new Map();
+  private objectsWithId: object[] = [];
 
   private arrayBufferTransferMap = new Map<ArrayBuffer, number>();
 
@@ -573,6 +592,7 @@ export class ValueSerializer {
     this.size = 0;
     this.bufferCapacity = 0;
     this.idMap = new Map();
+    this.objectsWithId = [];
     this.nextId = 0;
     return bytes;
   }
@@ -746,6 +766,7 @@ export class ValueSerializer {
     // Otherwise, allocate an ID for it.
     const id = this.nextId++;
     this.idMap.set(receiver, id + 1);
+    this.objectsWithId.push(receiver);
 
     // Eliminate callable and exotic objects, which should not be serialized.
     // if (this.isCallable(receiver) || (this.isSpecialReceiverInstanceType(instanceType) &&
@@ -839,6 +860,7 @@ export class ValueSerializer {
 
   private writeJSArray(array: unknown[]): boolean {
     const startingBufferSize = this.size;
+    const startingNextId = this.nextId;
 
     const length = array.length;
 
@@ -915,6 +937,10 @@ export class ValueSerializer {
       this.writeVarInt(length);
     } else {
       this.size = startingBufferSize;
+      while (this.nextId > startingNextId) {
+        this.idMap.delete(this.objectsWithId.pop()!);
+        this.nextId--;
+      }
 
       this.writeTag(SerializationTag.kBeginSparseJSArray);
       this.writeVarInt(length);
@@ -1170,21 +1196,17 @@ export class ValueSerializer {
   private writeJSObjectProperties(object: any): number {
     let propertiesWritten = 0;
 
-    for (const key in object) {
-      if (Object.hasOwn(object, key)) {
-        if (typeof key !== "string") continue;
+    for (const key of Object.keys(object)) {
+      const value = object[key];
 
-        const value = object[key];
+      // If the property is no longer found, do not serialize it.
+      // This could happen if a getter deleted the property.
+      if (!(key in object)) continue;
 
-        // If the property is no longer found, do not serialize it.
-        // This could happen if a getter deleted the property.
-        if (!(key in object)) continue;
-
-        if (!this.writeObject(key) || !this.writeObject(value)) {
-          throw Error('TODO')
-        }
-        propertiesWritten++;
+      if (!this.writeObject(key) || !this.writeObject(value)) {
+        throw Error('TODO')
       }
+      propertiesWritten++;
     }
 
     return propertiesWritten;
@@ -1194,7 +1216,7 @@ export class ValueSerializer {
     let propertiesWritten = 0;
 
     for (const key of keys) {
-      if (typeof key !== "string" || Number.isInteger(Number(key))) continue;
+      if (typeof key !== "string" || isArrayIndex(key)) continue;
 
       const value = object[key];
 
@@ -1607,7 +1629,7 @@ export class ValueDeserializer {
     const bytes = this.readRawBytes(byteLength);
     if (bytes === null) return null;
 
-    return this.tdLatin1?.decode(bytes) ?? stringFromCharCode(bytes);
+    return this.tdLatin1 ? decodeLatin1(this.tdLatin1, bytes) : stringFromCharCode(bytes);
   }
 
   private readTwoByteString(): string | null {

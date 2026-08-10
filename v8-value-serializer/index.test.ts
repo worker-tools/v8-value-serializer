@@ -46,6 +46,38 @@ Deno.test("serialize and deserialize ArrayBuffer", () => {
   assertEquals(a, o);
 });
 
+Deno.test("preserves references around sparse array holes", () => {
+  const shared = { value: 1 };
+  const value = [shared, , shared];
+  const actual = deserialize(serialize(value));
+
+  assertEquals(actual, value);
+  assertEquals(1 in actual, false);
+  assertEquals(actual[0] === actual[2], true);
+});
+
+Deno.test("preserves numeric-looking array properties", () => {
+  const value = Object.assign([1, 2], {
+    "01": "leading zero",
+    "-1": "negative",
+    "1e0": "exponent",
+    "4294967295": "past the last array index",
+  });
+
+  assertEquals(deserialize(serialize(value)), value);
+});
+
+Deno.test("reads V8 one-byte strings without Windows-1252 remapping", () => {
+  for (let codeUnit = 0x80; codeUnit <= 0x9f; codeUnit++) {
+    const value = String.fromCharCode(codeUnit);
+    assertEquals(
+      deserialize(nativeSerialize(value)),
+      value,
+      `U+${codeUnit.toString(16).padStart(4, "0")}`,
+    );
+  }
+});
+
 Deno.test("custom serializer/deserializer implementation", () => {
   class Port { constructor(public value: any) {} }
 
