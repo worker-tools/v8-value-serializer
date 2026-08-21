@@ -194,3 +194,18 @@ Deno.test("stream", () => {
   assertEquals(des.readObjectWrapper(), obj);
   assertEquals(des.readObjectWrapper(), obj);
 })
+
+Deno.test("Error cause is present only when serialized", () => {
+  for (const [input, expectedCause] of [
+    [new Error("without cause"), undefined],
+    [new Error("with null cause", { cause: null }), null],
+  ] as const) {
+    const serialized = nativeSerialize(input);
+    const deserializer = new ValueDeserializer(serialized);
+    deserializer.readHeader();
+    const output = deserializer.readObjectWrapper() as Error;
+
+    assertEquals(Object.hasOwn(output, "cause"), expectedCause !== undefined);
+    if (expectedCause !== undefined) assertEquals(output.cause, expectedCause);
+  }
+});

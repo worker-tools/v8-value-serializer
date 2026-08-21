@@ -2073,7 +2073,8 @@ export class ValueDeserializer {
 
     let message: string | undefined;
     let stack: string | undefined;
-    let cause: any | null = null;
+    let cause: any;
+    let hasCause = false;
 
     let nextTag;
     while ((nextTag = this.readVarInt()) !== ErrorTag.kEnd) {
@@ -2085,6 +2086,7 @@ export class ValueDeserializer {
           stack = this.readString() ?? undefined;
           break;
         case ErrorTag.kCause:
+          hasCause = true;
           cause = this.readObject();
           break;
         default:
@@ -2092,9 +2094,9 @@ export class ValueDeserializer {
       }
     }
 
-    const error = new ErrorCtor(message, {
-      cause: cause === sNull ? null : cause
-    });
+    const error = hasCause
+      ? new ErrorCtor(message, { cause: cause === sNull ? null : cause })
+      : new ErrorCtor(message);
 
     if (stack) {
       Object.defineProperty(error, 'stack', {
