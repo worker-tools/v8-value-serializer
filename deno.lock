@@ -212,12 +212,12 @@
     "members": {
       "node-serialization-api": {
         "dependencies": [
-          "jsr:@workers/v8-value-serializer-core@~0.1.16"
+          "jsr:@workers/v8-value-serializer-core@~0.1.18"
         ]
       },
       "v8-value-serializer": {
         "dependencies": [
-          "jsr:@workers/v8-value-serializer-core@~0.1.16"
+          "jsr:@workers/v8-value-serializer-core@~0.1.18"
         ]
       }
     }
