@@ -1,4 +1,6 @@
-export const kLatestVersion = 15;
+export const kLatestVersion = 16;
+// Keep outgoing data readable by older V8 runtimes
+const kWriteVersion = 15;
 
 export const enum SerializationTag {
   // version:uint32_t (if at beginning of data, sets version > 0)
@@ -418,7 +420,7 @@ export class ValueSerializer {
 
   writeHeader(): void {
     this.writeTag(SerializationTag.kVersion);
-    this.writeVarInt(kLatestVersion);
+    this.writeVarInt(kWriteVersion);
   }
 
   setForceUtf8(mode: boolean): void {
@@ -1017,13 +1019,13 @@ export class ValueSerializer {
     }
 
     const byteLength = arrayBuffer.byteLength;
-    if (byteLength > Number.MAX_SAFE_INTEGER) {
+    if (byteLength > 0xFFFFFFFF) {
       return this.throwDataCloneError(arrayBuffer);
     }
 
     if ('resizable' in arrayBuffer && arrayBuffer.resizable) {
       const maxByteLength = (arrayBuffer as any).maxByteLength;
-      if (maxByteLength > Number.MAX_SAFE_INTEGER) {
+      if (maxByteLength > 0xFFFFFFFF) {
         return this.throwDataCloneError(arrayBuffer);
       }
 
@@ -1074,6 +1076,9 @@ export class ValueSerializer {
   private writeJSArrayBufferView(view: ArrayBufferView|DataView) {
     if (this.treatArrayBufferViewsAsHostObjects) {
       return this.writeHostObject(view);
+    }
+    if (view.byteOffset > 0xFFFFFFFF || view.byteLength > 0xFFFFFFFF) {
+      return this.throwDataCloneError(view);
     }
     this.writeTag(SerializationTag.kArrayBufferView);
 
@@ -1399,6 +1404,22 @@ export class ValueDeserializer {
       this.position++;
     } while (hasAnotherByte);
     return value;
+  }
+
+  private readBufferSize(): number | null {
+    // Format 16 widens buffer lengths and offsets from uint32_t to uint64_t.
+    // Bitwise arithmetic would silently truncate them to 32 bits in JS.
+    const maxBytes = this.wireFormatVersion >= 16 ? 10 : 5;
+    const maxValue = this.wireFormatVersion >= 16 ? Number.MAX_SAFE_INTEGER : 0xFFFFFFFF;
+    let value = 0;
+    for (let i = 0; i < maxBytes; i++) {
+      if (this.position >= this.end) return null;
+      const byte = this.data[this.position++];
+      value += (byte & 0x7F) * 2 ** (7 * i);
+      if (value > maxValue) return null;
+      if (!(byte & 0x80)) return value;
+    }
+    return null;
   }
 
   private readZigZag(): number | null {
@@ -1904,12 +1925,12 @@ export class ValueDeserializer {
       return arrayBuffer;
     }
 
-    const byteLength = this.readVarInt();
+    const byteLength = this.readBufferSize();
     if (byteLength === null) return null;
 
     let maxByteLength = byteLength;
     if (isResizable) {
-      const readMaxByteLength = this.readVarInt();
+      const readMaxByteLength = this.readBufferSize();
       if (readMaxByteLength === null || byteLength > readMaxByteLength) {
         return null;
       }
@@ -1956,8 +1977,8 @@ export class ValueDeserializer {
     let flags: number|null = 0;
 
     if ((tag = this.readVarInt()) === null ||
-        (byteOffset = this.readVarInt()) === null ||
-        (byteLength = this.readVarInt()) === null ||
+        (byteOffset = this.readBufferSize()) === null ||
+        (byteLength = this.readBufferSize()) === null ||
         byteOffset > bufferByteLength ||
         byteLength > bufferByteLength - byteOffset) {
       return null;
